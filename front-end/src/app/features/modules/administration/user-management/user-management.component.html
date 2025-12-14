@@ -1,0 +1,132 @@
+<div class="user-management-container" *ngIf="!isCreateMode">
+  <app-user-table></app-user-table>
+</div>
+
+<div class="user-management-container" *ngIf="isCreateMode">
+  <div class="page-header">
+    <div>
+      <h1>Create New User</h1>
+      <p>Fill in the details to create a new user account</p>
+    </div>
+    <button class="cancel-btn" (click)="onCancel()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Cancel
+    </button>
+  </div>
+
+  <div class="form-wrapper">
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form">
+      <!-- Tutor Selection -->
+      <div class="form-group">
+        <label for="tutor">Select Tutor <span class="required">*</span></label>
+        <select
+          id="tutor"
+          formControlName="tutor"
+          (change)="onTutorChange()"
+          [class.error]="tutor?.invalid && tutor?.touched"
+        >
+          <option value="">-- Select a Tutor --</option>
+          <option *ngFor="let tutor of tutors" [value]="tutor.id">
+            {{ tutor.nameOfApplicant }} ({{ tutor.regNo }})
+          </option>
+        </select>
+        <div class="error-message" *ngIf="tutor?.invalid && tutor?.touched">
+          Please select a tutor
+        </div>
+      </div>
+
+      <!-- User ID (Auto-generated, Disabled) -->
+      <div class="form-group">
+        <label for="userId">User ID</label>
+        <input
+          type="text"
+          id="userId"
+          formControlName="userId"
+          placeholder="Will be auto-generated"
+          disabled
+          class="disabled-input"
+        />
+        <small class="helper-text">User ID is automatically generated from tutor registration number</small>
+      </div>
+
+      <!-- Username -->
+      <div class="form-group">
+        <label for="username">Username <span class="required">*</span></label>
+        <input
+          type="text"
+          id="username"
+          formControlName="username"
+          placeholder="Enter username"
+          [class.error]="username?.invalid && username?.touched"
+        />
+        <div class="error-message" *ngIf="username?.invalid && username?.touched">
+          <span *ngIf="username?.errors?.['required']">Username is required</span>
+          <span *ngIf="username?.errors?.['minlength']">Username must be at least 3 characters</span>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password">Password <span class="required">*</span></label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          placeholder="Enter password"
+          [class.error]="password?.invalid && password?.touched"
+        />
+        <div class="error-message" *ngIf="password?.invalid && password?.touched">
+          <span *ngIf="password?.errors?.['required']">Password is required</span>
+          <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>
+        </div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+        <input
+          type="password"
+          id="confirmPassword"
+          formControlName="confirmPassword"
+          placeholder="Confirm password"
+          [class.error]="(confirmPassword?.invalid && confirmPassword?.touched) || userForm.errors?.['passwordMismatch']"
+        />
+        <div class="error-message" *ngIf="confirmPassword?.invalid && confirmPassword?.touched">
+          <span *ngIf="confirmPassword?.errors?.['required']">Please confirm your password</span>
+        </div>
+        <div class="error-message" *ngIf="userForm.errors?.['passwordMismatch'] && confirmPassword?.touched">
+          Passwords do not match
+        </div>
+      </div>
+
+      <!-- Can Login Checkbox -->
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            formControlName="canLogin"
+            class="checkbox-input"
+          />
+          <span>Can Login?</span>
+        </label>
+        <small class="helper-text">Allow this user to login to the system</small>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSubmitting">
+          Cancel
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="isSubmitting || userForm.invalid">
+          <span *ngIf="!isSubmitting">Create User</span>
+          <span *ngIf="isSubmitting" class="loading">
+            <span class="spinner"></span>
+            Creating...
+          </span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

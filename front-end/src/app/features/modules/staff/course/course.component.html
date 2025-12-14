@@ -1,0 +1,152 @@
+<div class="course-container" *ngIf="!isCreateMode && !isEditMode">
+  <app-course-table></app-course-table>
+</div>
+
+<div class="course-container" *ngIf="isCreateMode || isEditMode">
+  <div class="page-header">
+    <div>
+      <h1>{{ isEditMode ? 'Edit Course' : 'Create New Course' }}</h1>
+      <p>{{ isEditMode ? 'Update course details' : 'Fill in the details to create a new course' }}</p>
+    </div>
+    <button class="cancel-btn" (click)="onCancel()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Cancel
+    </button>
+  </div>
+
+  <form [formGroup]="courseForm" (ngSubmit)="onSubmit()" class="course-form">
+    <div class="form-section">
+      <div class="form-grid">
+        <!-- Course Code -->
+        <div class="form-group">
+          <label for="courseCode">Course Code <span class="required">*</span></label>
+          <input
+            type="text"
+            id="courseCode"
+            formControlName="courseCode"
+            placeholder="Enter course code"
+            [class.error]="courseCode?.invalid && courseCode?.touched"
+          />
+          <div class="error-message" *ngIf="courseCode?.invalid && courseCode?.touched">
+            <span *ngIf="courseCode?.errors?.['required']">Course code is required</span>
+            <span *ngIf="courseCode?.errors?.['minlength']">Course code must be at least 2 characters</span>
+          </div>
+        </div>
+
+        <!-- Course Name -->
+        <div class="form-group">
+          <label for="courseName">Course Name <span class="required">*</span></label>
+          <input
+            type="text"
+            id="courseName"
+            formControlName="courseName"
+            placeholder="Enter course name"
+            [class.error]="courseName?.invalid && courseName?.touched"
+          />
+          <div class="error-message" *ngIf="courseName?.invalid && courseName?.touched">
+            <span *ngIf="courseName?.errors?.['required']">Course name is required</span>
+            <span *ngIf="courseName?.errors?.['minlength']">Course name must be at least 3 characters</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group full-width">
+          <label for="description">Description <span class="required">*</span></label>
+          <textarea
+            id="description"
+            formControlName="description"
+            placeholder="Enter course description"
+            rows="4"
+            [class.error]="description?.invalid && description?.touched"
+          ></textarea>
+          <div class="error-message" *ngIf="description?.invalid && description?.touched">
+            Description is required
+          </div>
+        </div>
+
+        <!-- Duration -->
+        <div class="form-group">
+          <label for="duration">Duration (Months) <span class="required">*</span></label>
+          <input
+            type="number"
+            id="duration"
+            formControlName="duration"
+            placeholder="Enter duration in months"
+            min="1"
+            [class.error]="duration?.invalid && duration?.touched"
+          />
+          <div class="error-message" *ngIf="duration?.invalid && duration?.touched">
+            <span *ngIf="duration?.errors?.['required']">Duration is required</span>
+            <span *ngIf="duration?.errors?.['min']">Duration must be at least 1 month</span>
+          </div>
+        </div>
+
+        <!-- Total Fee -->
+        <div class="form-group">
+          <label for="totalFee">Total Fee <span class="required">*</span></label>
+          <input
+            type="number"
+            id="totalFee"
+            formControlName="totalFee"
+            placeholder="Enter total fee"
+            min="0"
+            step="0.01"
+            [class.error]="totalFee?.invalid && totalFee?.touched"
+          />
+          <div class="error-message" *ngIf="totalFee?.invalid && totalFee?.touched">
+            <span *ngIf="totalFee?.errors?.['required']">Total fee is required</span>
+            <span *ngIf="totalFee?.errors?.['min']">Total fee must be 0 or greater</span>
+          </div>
+        </div>
+
+        <!-- Batch Dropdown -->
+        <div class="form-group">
+          <label for="batchId">Batch <span class="required">*</span></label>
+          <select
+            id="batchId"
+            formControlName="batchId"
+            [class.error]="batchId?.invalid && batchId?.touched"
+          >
+            <option value="">-- Select a Batch --</option>
+            <option *ngFor="let batch of batches" [value]="batch.id">
+              {{ batch.batchName }} ({{ batch.batchCode }})
+            </option>
+          </select>
+          <div class="error-message" *ngIf="batchId?.invalid && batchId?.touched">
+            Please select a batch
+          </div>
+        </div>
+
+        <!-- Is Active Checkbox -->
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              formControlName="isActive"
+              class="checkbox-input"
+            />
+            <span>Is Active</span>
+          </label>
+          <small class="helper-text">Enable this course for enrollment</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSubmitting">
+        Cancel
+      </button>
+      <button type="submit" class="btn-primary" [disabled]="isSubmitting || courseForm.invalid">
+        <span *ngIf="!isSubmitting">{{ isEditMode ? 'Update' : 'Create' }} Course</span>
+        <span *ngIf="isSubmitting" class="loading">
+          <span class="spinner"></span>
+          {{ isEditMode ? 'Updating...' : 'Creating...' }}
+        </span>
+      </button>
+    </div>
+  </form>
+</div>
+

@@ -1,0 +1,479 @@
+<div class="profile-container">
+  <div class="page-header">
+    <div>
+      <h1>User Profile</h1>
+      <p>Manage your personal information and preferences</p>
+    </div>
+    <button *ngIf="!isEditing" class="edit-btn" (click)="toggleEdit()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17 3L21 7L13.7071 14.2929C13.3166 14.6834 12.6834 14.6834 12.2929 14.2929L10 12L17 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M15 6L9 12L4 17L3 21L7 20L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Edit Profile
+    </button>
+  </div>
+
+  <div class="profile-content">
+    <!-- Profile Image Section -->
+    <div class="profile-image-section">
+      <div class="image-container">
+        <div class="profile-avatar" *ngIf="!profileImagePreview">
+          <span>{{ (nameOfApplicant?.value || 'JD').substring(0, 2).toUpperCase() }}</span>
+        </div>
+        <img *ngIf="profileImagePreview" [src]="profileImagePreview" alt="Profile" class="profile-image" />
+        <div class="image-overlay" *ngIf="isEditing">
+          <label for="profileImageInput" class="upload-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M17 8L12 3L7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Upload
+          </label>
+          <input
+            type="file"
+            id="profileImageInput"
+            accept="image/*"
+            (change)="onFileSelected($event)"
+            style="display: none;"
+          />
+          <button *ngIf="profileImagePreview" class="remove-btn" (click)="removeProfileImage()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="profile-name" *ngIf="!isEditing">
+        <h2>{{ nameOfApplicant?.value || 'User' }}</h2>
+        <p>{{ nameOfCourse?.value || 'Staff Member' }}</p>
+      </div>
+    </div>
+
+    <!-- Profile Form -->
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="profile-form">
+      <!-- Section 1: Personal Information -->
+      <div class="form-section">
+        <div class="section-header">
+          <h2>Personal Information</h2>
+          <span class="section-number">1</span>
+        </div>
+
+        <div class="form-grid">
+          <!-- Reg No -->
+          <div class="form-group">
+            <label for="regNo">Registration Number <span class="required">*</span></label>
+            <input
+              type="text"
+              id="regNo"
+              formControlName="regNo"
+              [readonly]="!isEditing"
+              [class.error]="regNo?.invalid && regNo?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="regNo?.invalid && regNo?.touched">
+              Registration number is required
+            </div>
+          </div>
+
+          <!-- Date -->
+          <div class="form-group">
+            <label for="date">Date <span class="required">*</span></label>
+            <input
+              type="date"
+              id="date"
+              formControlName="date"
+              [readonly]="!isEditing"
+              [class.error]="date?.invalid && date?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="date?.invalid && date?.touched">
+              Date is required
+            </div>
+          </div>
+
+          <!-- Name of Applicant -->
+          <div class="form-group full-width">
+            <label for="nameOfApplicant">Name of Applicant <span class="required">*</span></label>
+            <input
+              type="text"
+              id="nameOfApplicant"
+              formControlName="nameOfApplicant"
+              [readonly]="!isEditing"
+              [class.error]="nameOfApplicant?.invalid && nameOfApplicant?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="nameOfApplicant?.invalid && nameOfApplicant?.touched">
+              <span *ngIf="nameOfApplicant?.errors?.['required']">Name is required</span>
+              <span *ngIf="nameOfApplicant?.errors?.['minlength']">Name must be at least 3 characters</span>
+            </div>
+          </div>
+
+          <!-- Name of Course -->
+          <div class="form-group full-width">
+            <label for="nameOfCourse">Name of Course <span class="required">*</span></label>
+            <input
+              type="text"
+              id="nameOfCourse"
+              formControlName="nameOfCourse"
+              [readonly]="!isEditing"
+              [class.error]="nameOfCourse?.invalid && nameOfCourse?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="nameOfCourse?.invalid && nameOfCourse?.touched">
+              Course name is required
+            </div>
+          </div>
+
+          <!-- Name of Guardian -->
+          <div class="form-group">
+            <label for="nameOfGuardian">Name of Guardian <span class="required">*</span></label>
+            <input
+              type="text"
+              id="nameOfGuardian"
+              formControlName="nameOfGuardian"
+              [readonly]="!isEditing"
+              [class.error]="nameOfGuardian?.invalid && nameOfGuardian?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="nameOfGuardian?.invalid && nameOfGuardian?.touched">
+              Guardian name is required
+            </div>
+          </div>
+
+          <!-- Relationship with Guardian -->
+          <div class="form-group">
+            <label for="relationshipWithGuardian">Relationship with Guardian <span class="required">*</span></label>
+            <select
+              id="relationshipWithGuardian"
+              formControlName="relationshipWithGuardian"
+              [disabled]="!isEditing"
+              [class.error]="relationshipWithGuardian?.invalid && relationshipWithGuardian?.touched"
+              [class.readonly]="!isEditing"
+            >
+              <option value="">Select relationship</option>
+              <option value="Father">Father</option>
+              <option value="Mother">Mother</option>
+              <option value="Brother">Brother</option>
+              <option value="Sister">Sister</option>
+              <option value="Uncle">Uncle</option>
+              <option value="Aunt">Aunt</option>
+              <option value="Guardian">Guardian</option>
+              <option value="Spouse">Spouse</option>
+              <option value="Other">Other</option>
+            </select>
+            <div class="error-message" *ngIf="relationshipWithGuardian?.invalid && relationshipWithGuardian?.touched">
+              Relationship is required
+            </div>
+          </div>
+
+          <!-- Occupation of Guardian -->
+          <div class="form-group">
+            <label for="occupationOfGuardian">Occupation of Guardian <span class="required">*</span></label>
+            <input
+              type="text"
+              id="occupationOfGuardian"
+              formControlName="occupationOfGuardian"
+              [readonly]="!isEditing"
+              [class.error]="occupationOfGuardian?.invalid && occupationOfGuardian?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="occupationOfGuardian?.invalid && occupationOfGuardian?.touched">
+              Occupation is required
+            </div>
+          </div>
+
+          <!-- Permanent Address -->
+          <div class="form-group full-width">
+            <label for="permanentAddress">Permanent Address <span class="required">*</span></label>
+            <textarea
+              id="permanentAddress"
+              formControlName="permanentAddress"
+              rows="3"
+              [readonly]="!isEditing"
+              [class.error]="permanentAddress?.invalid && permanentAddress?.touched"
+              [class.readonly]="!isEditing"
+            ></textarea>
+            <div class="error-message" *ngIf="permanentAddress?.invalid && permanentAddress?.touched">
+              Permanent address is required
+            </div>
+          </div>
+
+          <!-- Mobile Number -->
+          <div class="form-group">
+            <label for="mobileNumber">Mobile Number <span class="required">*</span></label>
+            <input
+              type="tel"
+              id="mobileNumber"
+              formControlName="mobileNumber"
+              maxlength="10"
+              [readonly]="!isEditing"
+              [class.error]="mobileNumber?.invalid && mobileNumber?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="mobileNumber?.invalid && mobileNumber?.touched">
+              <span *ngIf="mobileNumber?.errors?.['required']">Mobile number is required</span>
+              <span *ngIf="mobileNumber?.errors?.['pattern']">Please enter a valid 10-digit mobile number</span>
+            </div>
+          </div>
+
+          <!-- Home Contact -->
+          <div class="form-group">
+            <label for="homeContact">Home Contact</label>
+            <input
+              type="tel"
+              id="homeContact"
+              formControlName="homeContact"
+              maxlength="10"
+              [readonly]="!isEditing"
+              [class.error]="homeContact?.invalid && homeContact?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="homeContact?.invalid && homeContact?.touched">
+              Please enter a valid 10-digit number
+            </div>
+          </div>
+
+          <!-- Date of Birth -->
+          <div class="form-group">
+            <label for="dateOfBirth">Date of Birth <span class="required">*</span></label>
+            <input
+              type="date"
+              id="dateOfBirth"
+              formControlName="dateOfBirth"
+              [readonly]="!isEditing"
+              [class.error]="dateOfBirth?.invalid && dateOfBirth?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="dateOfBirth?.invalid && dateOfBirth?.touched">
+              Date of birth is required
+            </div>
+          </div>
+
+          <!-- Sex -->
+          <div class="form-group">
+            <label for="sex">Sex <span class="required">*</span></label>
+            <select
+              id="sex"
+              formControlName="sex"
+              [disabled]="!isEditing"
+              [class.error]="sex?.invalid && sex?.touched"
+              [class.readonly]="!isEditing"
+            >
+              <option value="">Select sex</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+            <div class="error-message" *ngIf="sex?.invalid && sex?.touched">
+              Sex is required
+            </div>
+          </div>
+
+          <!-- Marital Status -->
+          <div class="form-group">
+            <label for="maritalStatus">Marital Status <span class="required">*</span></label>
+            <select
+              id="maritalStatus"
+              formControlName="maritalStatus"
+              [disabled]="!isEditing"
+              [class.error]="maritalStatus?.invalid && maritalStatus?.touched"
+              [class.readonly]="!isEditing"
+            >
+              <option value="">Select marital status</option>
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+              <option value="Divorced">Divorced</option>
+              <option value="Widowed">Widowed</option>
+            </select>
+            <div class="error-message" *ngIf="maritalStatus?.invalid && maritalStatus?.touched">
+              Marital status is required
+            </div>
+          </div>
+
+          <!-- Religion -->
+          <div class="form-group">
+            <label for="religion">Religion <span class="required">*</span></label>
+            <input
+              type="text"
+              id="religion"
+              formControlName="religion"
+              [readonly]="!isEditing"
+              [class.error]="religion?.invalid && religion?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="religion?.invalid && religion?.touched">
+              Religion is required
+            </div>
+          </div>
+
+          <!-- Religion Category -->
+          <div class="form-group">
+            <label for="religionCategory">Category (SC/ST/Minority/OBC/Other) <span class="required">*</span></label>
+            <select
+              id="religionCategory"
+              formControlName="religionCategory"
+              [disabled]="!isEditing"
+              [class.error]="religionCategory?.invalid && religionCategory?.touched"
+              [class.readonly]="!isEditing"
+            >
+              <option value="">Select category</option>
+              <option value="SC">SC (Scheduled Caste)</option>
+              <option value="ST">ST (Scheduled Tribe)</option>
+              <option value="Minority">Minority</option>
+              <option value="OBC">OBC (Other Backward Class)</option>
+              <option value="Other">Other</option>
+            </select>
+            <div class="error-message" *ngIf="religionCategory?.invalid && religionCategory?.touched">
+              Category is required
+            </div>
+          </div>
+
+          <!-- Educational Qualification -->
+          <div class="form-group full-width">
+            <label for="educationalQualification">Educational Qualification <span class="required">*</span></label>
+            <input
+              type="text"
+              id="educationalQualification"
+              formControlName="educationalQualification"
+              [readonly]="!isEditing"
+              [class.error]="educationalQualification?.invalid && educationalQualification?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="educationalQualification?.invalid && educationalQualification?.touched">
+              Educational qualification is required
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="form-group full-width">
+            <label for="email">Email <span class="required">*</span></label>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              [readonly]="!isEditing"
+              [class.error]="email?.invalid && email?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="email?.invalid && email?.touched">
+              <span *ngIf="email?.errors?.['required']">Email is required</span>
+              <span *ngIf="email?.errors?.['email']">Please enter a valid email address</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Admission Details -->
+      <div class="form-section">
+        <div class="section-header">
+          <h2>Admission Details</h2>
+          <span class="section-number">2</span>
+        </div>
+
+        <div class="form-grid">
+          <!-- Application Number -->
+          <div class="form-group">
+            <label for="applicationNumber">Application Number <span class="required">*</span></label>
+            <input
+              type="text"
+              id="applicationNumber"
+              formControlName="applicationNumber"
+              [readonly]="!isEditing"
+              [class.error]="applicationNumber?.invalid && applicationNumber?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="applicationNumber?.invalid && applicationNumber?.touched">
+              Application number is required
+            </div>
+          </div>
+
+          <!-- Class Time -->
+          <div class="form-group">
+            <label for="classTime">Class Time <span class="required">*</span></label>
+            <input
+              type="time"
+              id="classTime"
+              formControlName="classTime"
+              [readonly]="!isEditing"
+              [class.error]="classTime?.invalid && classTime?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="classTime?.invalid && classTime?.touched">
+              Class time is required
+            </div>
+          </div>
+
+          <!-- Total Course Fee -->
+          <div class="form-group">
+            <label for="totalCourseFee">Total Course Fee <span class="required">*</span></label>
+            <input
+              type="number"
+              id="totalCourseFee"
+              formControlName="totalCourseFee"
+              min="0"
+              step="0.01"
+              [readonly]="!isEditing"
+              [class.error]="totalCourseFee?.invalid && totalCourseFee?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="totalCourseFee?.invalid && totalCourseFee?.touched">
+              <span *ngIf="totalCourseFee?.errors?.['required']">Total course fee is required</span>
+              <span *ngIf="totalCourseFee?.errors?.['min']">Fee must be a positive number</span>
+            </div>
+          </div>
+
+          <!-- Fee Details -->
+          <div class="form-group full-width">
+            <label for="feeDetails">Fee Details <span class="required">*</span></label>
+            <textarea
+              id="feeDetails"
+              formControlName="feeDetails"
+              rows="4"
+              [readonly]="!isEditing"
+              [class.error]="feeDetails?.invalid && feeDetails?.touched"
+              [class.readonly]="!isEditing"
+            ></textarea>
+            <div class="error-message" *ngIf="feeDetails?.invalid && feeDetails?.touched">
+              Fee details are required
+            </div>
+          </div>
+
+          <!-- Admitted By -->
+          <div class="form-group">
+            <label for="admittedBy">Admitted By <span class="required">*</span></label>
+            <input
+              type="text"
+              id="admittedBy"
+              formControlName="admittedBy"
+              [readonly]="!isEditing"
+              [class.error]="admittedBy?.invalid && admittedBy?.touched"
+              [class.readonly]="!isEditing"
+            />
+            <div class="error-message" *ngIf="admittedBy?.invalid && admittedBy?.touched">
+              Admitted by is required
+            </div>
+          </div>
+
+          <!-- Remarks -->
+          <div class="form-group full-width">
+            <label for="remarks">Remarks (if any)</label>
+            <textarea
+              id="remarks"
+              formControlName="remarks"
+              rows="3"
+              [readonly]="!isEditing"
+              [class.readonly]="!isEditing"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="form-actions" *ngIf="isEditing">
+        <button type="button" class="btn-cancel" (click)="toggleEdit()">Cancel</button>
+        <button type="submit" class="btn-submit">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,82 @@
+<div class="batch-container" *ngIf="!isCreateMode && !isEditMode">
+  <app-batch-table></app-batch-table>
+</div>
+
+<div class="batch-container" *ngIf="isCreateMode || isEditMode">
+  <div class="page-header">
+    <div>
+      <h1>{{ isEditMode ? 'Edit Batch' : 'Create New Batch' }}</h1>
+      <p>{{ isEditMode ? 'Update batch details' : 'Fill in the details to create a new batch' }}</p>
+    </div>
+    <button class="cancel-btn" (click)="onCancel()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Cancel
+    </button>
+  </div>
+
+  <form [formGroup]="batchForm" (ngSubmit)="onSubmit()" class="batch-form">
+    <div class="form-section">
+      <div class="form-grid">
+        <!-- Batch Name -->
+        <div class="form-group">
+          <label for="batchName">Batch Name <span class="required">*</span></label>
+          <input
+            type="text"
+            id="batchName"
+            formControlName="batchName"
+            placeholder="Enter batch name"
+            [class.error]="batchName?.invalid && batchName?.touched"
+          />
+          <div class="error-message" *ngIf="batchName?.invalid && batchName?.touched">
+            <span *ngIf="batchName?.errors?.['required']">Batch name is required</span>
+            <span *ngIf="batchName?.errors?.['minlength']">Batch name must be at least 2 characters</span>
+          </div>
+        </div>
+
+        <!-- Batch Code -->
+        <div class="form-group">
+          <label for="batchCode">Batch Code <span class="required">*</span></label>
+          <input
+            type="text"
+            id="batchCode"
+            formControlName="batchCode"
+            placeholder="Enter batch code"
+            [class.error]="batchCode?.invalid && batchCode?.touched"
+          />
+          <div class="error-message" *ngIf="batchCode?.invalid && batchCode?.touched">
+            <span *ngIf="batchCode?.errors?.['required']">Batch code is required</span>
+            <span *ngIf="batchCode?.errors?.['minlength']">Batch code must be at least 2 characters</span>
+          </div>
+        </div>
+
+        <!-- Remarks -->
+        <div class="form-group full-width">
+          <label for="remarks">Remarks</label>
+          <textarea
+            id="remarks"
+            formControlName="remarks"
+            placeholder="Any additional remarks or notes"
+            rows="4"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSubmitting">
+        Cancel
+      </button>
+      <button type="submit" class="btn-primary" [disabled]="isSubmitting || batchForm.invalid">
+        <span *ngIf="!isSubmitting">{{ isEditMode ? 'Update' : 'Create' }} Batch</span>
+        <span *ngIf="isSubmitting" class="loading">
+          <span class="spinner"></span>
+          {{ isEditMode ? 'Updating...' : 'Creating...' }}
+        </span>
+      </button>
+    </div>
+  </form>
+</div>
+

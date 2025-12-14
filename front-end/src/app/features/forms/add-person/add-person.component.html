@@ -1,0 +1,448 @@
+<div class="form-container">
+  <div class="form-header">
+    <div>
+      <h1>Add {{ isStudent ? 'Student' : 'Tutor' }}</h1>
+      <p>Fill in the details to register a new {{ isStudent ? 'student' : 'tutor' }}</p>
+    </div>
+    <button class="cancel-btn" (click)="onCancel()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Cancel
+    </button>
+  </div>
+
+  <form [formGroup]="personForm" (ngSubmit)="onSubmit()" class="person-form">
+    <!-- Section 1: Personal Information -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2>Personal Information</h2>
+        <span class="section-number">1</span>
+      </div>
+
+      <div class="form-grid">
+        <!-- Reg No -->
+        <div class="form-group">
+          <label for="regNo">Registration Number <span class="required" *ngIf="isFieldRequired('regNo')">*</span></label>
+          <input
+            type="text"
+            id="regNo"
+            formControlName="regNo"
+            placeholder="Enter registration number"
+            [class.error]="regNo?.invalid && regNo?.touched"
+          />
+          <div class="error-message" *ngIf="regNo?.invalid && regNo?.touched">
+            Registration number is required
+          </div>
+        </div>
+
+        <!-- Date -->
+        <div class="form-group">
+          <label for="date">Date <span class="required" *ngIf="isFieldRequired('date')">*</span></label>
+          <input
+            type="date"
+            id="date"
+            formControlName="date"
+            [class.error]="date?.invalid && date?.touched"
+          />
+          <div class="error-message" *ngIf="date?.invalid && date?.touched">
+            Date is required
+          </div>
+        </div>
+
+        <!-- Profile Image Upload -->
+        <div class="form-group full-width">
+          <label>Profile Image</label>
+          <div class="image-upload-container">
+            <div class="image-preview" *ngIf="profileImagePreview">
+              <img [src]="profileImagePreview" alt="Profile Preview" />
+              <button type="button" class="remove-image" (click)="removeProfileImage()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="upload-area" *ngIf="!profileImagePreview">
+              <input
+                type="file"
+                id="profileImage"
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                class="file-input"
+              />
+              <label for="profileImage" class="upload-label">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Click to upload profile image</span>
+                <small>JPG, PNG or GIF (Max 5MB)</small>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Name of Applicant -->
+        <div class="form-group full-width">
+          <label for="nameOfApplicant">Name of Applicant <span class="required">*</span></label>
+          <input
+            type="text"
+            id="nameOfApplicant"
+            formControlName="nameOfApplicant"
+            placeholder="Enter full name"
+            [class.error]="nameOfApplicant?.invalid && nameOfApplicant?.touched"
+          />
+          <div class="error-message" *ngIf="nameOfApplicant?.invalid && nameOfApplicant?.touched">
+            <span *ngIf="nameOfApplicant?.errors?.['required']">Name is required</span>
+            <span *ngIf="nameOfApplicant?.errors?.['minlength']">Name must be at least 3 characters</span>
+          </div>
+        </div>
+
+        <!-- Name of Course -->
+        <div class="form-group full-width">
+          <label for="nameOfCourse">Name of Course <span class="required" *ngIf="isFieldRequired('nameOfCourse')">*</span></label>
+          <input
+            type="text"
+            id="nameOfCourse"
+            formControlName="nameOfCourse"
+            placeholder="Enter course name"
+            [class.error]="nameOfCourse?.invalid && nameOfCourse?.touched"
+          />
+          <div class="error-message" *ngIf="nameOfCourse?.invalid && nameOfCourse?.touched">
+            Course name is required
+          </div>
+        </div>
+
+        <!-- Name of Guardian -->
+        <div class="form-group">
+          <label for="nameOfGuardian">Name of Guardian <span class="required" *ngIf="isFieldRequired('nameOfGuardian')">*</span></label>
+          <input
+            type="text"
+            id="nameOfGuardian"
+            formControlName="nameOfGuardian"
+            placeholder="Enter guardian name"
+            [class.error]="nameOfGuardian?.invalid && nameOfGuardian?.touched"
+          />
+          <div class="error-message" *ngIf="nameOfGuardian?.invalid && nameOfGuardian?.touched">
+            Guardian name is required
+          </div>
+        </div>
+
+        <!-- Relationship with Guardian -->
+        <div class="form-group">
+          <label for="relationshipWithGuardian">Relationship with Guardian <span class="required" *ngIf="isFieldRequired('relationshipWithGuardian')">*</span></label>
+          <select
+            id="relationshipWithGuardian"
+            formControlName="relationshipWithGuardian"
+            [class.error]="relationshipWithGuardian?.invalid && relationshipWithGuardian?.touched"
+          >
+            <option value="">Select relationship</option>
+            <option value="Father">Father</option>
+            <option value="Mother">Mother</option>
+            <option value="Brother">Brother</option>
+            <option value="Sister">Sister</option>
+            <option value="Uncle">Uncle</option>
+            <option value="Aunt">Aunt</option>
+            <option value="Guardian">Guardian</option>
+            <option value="Other">Other</option>
+          </select>
+          <div class="error-message" *ngIf="relationshipWithGuardian?.invalid && relationshipWithGuardian?.touched">
+            Relationship is required
+          </div>
+        </div>
+
+        <!-- Occupation of Guardian -->
+        <div class="form-group">
+          <label for="occupationOfGuardian">Occupation of Guardian <span class="required" *ngIf="isFieldRequired('occupationOfGuardian')">*</span></label>
+          <input
+            type="text"
+            id="occupationOfGuardian"
+            formControlName="occupationOfGuardian"
+            placeholder="Enter occupation"
+            [class.error]="occupationOfGuardian?.invalid && occupationOfGuardian?.touched"
+          />
+          <div class="error-message" *ngIf="occupationOfGuardian?.invalid && occupationOfGuardian?.touched">
+            Occupation is required
+          </div>
+        </div>
+
+        <!-- Permanent Address -->
+        <div class="form-group full-width">
+          <label for="permanentAddress">Permanent Address <span class="required" *ngIf="isFieldRequired('permanentAddress')">*</span></label>
+          <textarea
+            id="permanentAddress"
+            formControlName="permanentAddress"
+            rows="3"
+            placeholder="Enter permanent address"
+            [class.error]="permanentAddress?.invalid && permanentAddress?.touched"
+          ></textarea>
+          <div class="error-message" *ngIf="permanentAddress?.invalid && permanentAddress?.touched">
+            Permanent address is required
+          </div>
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="form-group">
+          <label for="mobileNumber">Mobile Number <span class="required" *ngIf="isFieldRequired('mobileNumber')">*</span></label>
+          <input
+            type="tel"
+            id="mobileNumber"
+            formControlName="mobileNumber"
+            placeholder="Enter mobile number"
+            maxlength="10"
+            [class.error]="mobileNumber?.invalid && mobileNumber?.touched"
+          />
+          <div class="error-message" *ngIf="mobileNumber?.invalid && mobileNumber?.touched">
+            <span *ngIf="mobileNumber?.errors?.['required']">Mobile number is required</span>
+            <span *ngIf="mobileNumber?.errors?.['pattern']">Please enter a valid 10-digit mobile number</span>
+          </div>
+        </div>
+
+        <!-- Home Contact -->
+        <div class="form-group">
+          <label for="homeContact">Home Contact</label>
+          <input
+            type="tel"
+            id="homeContact"
+            formControlName="homeContact"
+            placeholder="Enter home contact"
+            maxlength="10"
+            [class.error]="homeContact?.invalid && homeContact?.touched"
+          />
+          <div class="error-message" *ngIf="homeContact?.invalid && homeContact?.touched">
+            Please enter a valid 10-digit number
+          </div>
+        </div>
+
+        <!-- Date of Birth -->
+        <div class="form-group">
+          <label for="dateOfBirth">Date of Birth <span class="required" *ngIf="isFieldRequired('dateOfBirth')">*</span></label>
+          <input
+            type="date"
+            id="dateOfBirth"
+            formControlName="dateOfBirth"
+            [class.error]="dateOfBirth?.invalid && dateOfBirth?.touched"
+          />
+          <div class="error-message" *ngIf="dateOfBirth?.invalid && dateOfBirth?.touched">
+            Date of birth is required
+          </div>
+        </div>
+
+        <!-- Sex -->
+        <div class="form-group">
+          <label for="sex">Sex <span class="required" *ngIf="isFieldRequired('sex')">*</span></label>
+          <select
+            id="sex"
+            formControlName="sex"
+            [class.error]="sex?.invalid && sex?.touched"
+          >
+            <option value="">Select sex</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+          <div class="error-message" *ngIf="sex?.invalid && sex?.touched">
+            Sex is required
+          </div>
+        </div>
+
+        <!-- Marital Status -->
+        <div class="form-group">
+          <label for="maritalStatus">Marital Status <span class="required" *ngIf="isFieldRequired('maritalStatus')">*</span></label>
+          <select
+            id="maritalStatus"
+            formControlName="maritalStatus"
+            [class.error]="maritalStatus?.invalid && maritalStatus?.touched"
+          >
+            <option value="">Select marital status</option>
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Divorced">Divorced</option>
+            <option value="Widowed">Widowed</option>
+          </select>
+          <div class="error-message" *ngIf="maritalStatus?.invalid && maritalStatus?.touched">
+            Marital status is required
+          </div>
+        </div>
+
+        <!-- Religion -->
+        <div class="form-group">
+          <label for="religion">Religion <span class="required" *ngIf="isFieldRequired('religion')">*</span></label>
+          <input
+            type="text"
+            id="religion"
+            formControlName="religion"
+            placeholder="Enter religion"
+            [class.error]="religion?.invalid && religion?.touched"
+          />
+          <div class="error-message" *ngIf="religion?.invalid && religion?.touched">
+            Religion is required
+          </div>
+        </div>
+
+        <!-- Religion Category -->
+        <div class="form-group">
+          <label for="religionCategory">Category (SC/ST/Minority/OBC/Other) <span class="required" *ngIf="isFieldRequired('religionCategory')">*</span></label>
+          <select
+            id="religionCategory"
+            formControlName="religionCategory"
+            [class.error]="religionCategory?.invalid && religionCategory?.touched"
+          >
+            <option value="">Select category</option>
+            <option value="SC">SC (Scheduled Caste)</option>
+            <option value="ST">ST (Scheduled Tribe)</option>
+            <option value="Minority">Minority</option>
+            <option value="OBC">OBC (Other Backward Class)</option>
+            <option value="Other">Other</option>
+          </select>
+          <div class="error-message" *ngIf="religionCategory?.invalid && religionCategory?.touched">
+            Category is required
+          </div>
+        </div>
+
+        <!-- Educational Qualification -->
+        <div class="form-group full-width">
+          <label for="educationalQualification">Educational Qualification <span class="required" *ngIf="isFieldRequired('educationalQualification')">*</span></label>
+          <input
+            type="text"
+            id="educationalQualification"
+            formControlName="educationalQualification"
+            placeholder="Enter educational qualification"
+            [class.error]="educationalQualification?.invalid && educationalQualification?.touched"
+          />
+          <div class="error-message" *ngIf="educationalQualification?.invalid && educationalQualification?.touched">
+            Educational qualification is required
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group full-width">
+          <label for="email">Email <span class="required">*</span></label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            placeholder="Enter email address"
+            [class.error]="email?.invalid && email?.touched"
+          />
+          <div class="error-message" *ngIf="email?.invalid && email?.touched">
+            <span *ngIf="email?.errors?.['required']">Email is required</span>
+            <span *ngIf="email?.errors?.['email']">Please enter a valid email address</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Admission Details -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2>Admission Details</h2>
+        <span class="section-number">2</span>
+      </div>
+
+      <div class="form-grid">
+        <!-- Application Number -->
+        <div class="form-group">
+          <label for="applicationNumber">Application Number <span class="required" *ngIf="isFieldRequired('applicationNumber')">*</span></label>
+          <input
+            type="text"
+            id="applicationNumber"
+            formControlName="applicationNumber"
+            placeholder="Enter application number"
+            [class.error]="applicationNumber?.invalid && applicationNumber?.touched"
+          />
+          <div class="error-message" *ngIf="applicationNumber?.invalid && applicationNumber?.touched">
+            Application number is required
+          </div>
+        </div>
+
+        <!-- Class Time -->
+        <div class="form-group">
+          <label for="classTime">Class Time <span class="required" *ngIf="isFieldRequired('classTime')">*</span></label>
+          <input
+            type="time"
+            id="classTime"
+            formControlName="classTime"
+            [class.error]="classTime?.invalid && classTime?.touched"
+          />
+          <div class="error-message" *ngIf="classTime?.invalid && classTime?.touched">
+            Class time is required
+          </div>
+        </div>
+
+        <!-- Total Course Fee -->
+        <div class="form-group">
+          <label for="totalCourseFee">Total Course Fee <span class="required" *ngIf="isFieldRequired('totalCourseFee')">*</span></label>
+          <input
+            type="number"
+            id="totalCourseFee"
+            formControlName="totalCourseFee"
+            placeholder="Enter total fee"
+            min="0"
+            step="0.01"
+            [class.error]="totalCourseFee?.invalid && totalCourseFee?.touched"
+          />
+          <div class="error-message" *ngIf="totalCourseFee?.invalid && totalCourseFee?.touched">
+            <span *ngIf="totalCourseFee?.errors?.['required']">Total course fee is required</span>
+            <span *ngIf="totalCourseFee?.errors?.['min']">Fee must be a positive number</span>
+          </div>
+        </div>
+
+        <!-- Fee Details -->
+        <div class="form-group full-width">
+          <label for="feeDetails">Fee Details <span class="required" *ngIf="isFieldRequired('feeDetails')">*</span></label>
+          <textarea
+            id="feeDetails"
+            formControlName="feeDetails"
+            rows="4"
+            placeholder="Enter fee breakdown and payment schedule"
+            [class.error]="feeDetails?.invalid && feeDetails?.touched"
+          ></textarea>
+          <div class="error-message" *ngIf="feeDetails?.invalid && feeDetails?.touched">
+            Fee details are required
+          </div>
+        </div>
+
+        <!-- Admitted By -->
+        <div class="form-group">
+          <label for="admittedBy">Admitted By <span class="required" *ngIf="isFieldRequired('admittedBy')">*</span></label>
+          <input
+            type="text"
+            id="admittedBy"
+            formControlName="admittedBy"
+            placeholder="Enter name of admitting authority"
+            [class.error]="admittedBy?.invalid && admittedBy?.touched"
+          />
+          <div class="error-message" *ngIf="admittedBy?.invalid && admittedBy?.touched">
+            Admitted by is required
+          </div>
+        </div>
+
+        <!-- Remarks -->
+        <div class="form-group full-width">
+          <label for="remarks">Remarks (if any)</label>
+          <textarea
+            id="remarks"
+            formControlName="remarks"
+            rows="3"
+            placeholder="Enter any additional remarks or notes"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSubmitting">
+        Cancel
+      </button>
+      <button type="submit" class="btn-primary" [disabled]="isSubmitting || personForm.invalid">
+        <span *ngIf="!isSubmitting">Submit</span>
+        <span *ngIf="isSubmitting" class="loading">
+          <span class="spinner"></span>
+          Submitting...
+        </span>
+      </button>
+    </div>
+  </form>
+</div>
+

@@ -1,0 +1,241 @@
+<div class="payment-container" *ngIf="!isCreateMode && !isEditMode">
+  <app-payment-table></app-payment-table>
+</div>
+
+<div class="payment-container" *ngIf="isCreateMode || isEditMode">
+  <div class="page-header">
+    <div>
+      <h1>{{ isEditMode ? 'Edit Payment' : 'Create New Payment' }}</h1>
+      <p>{{ isEditMode ? 'Update payment details' : 'Fill in the details to record a new payment' }}</p>
+    </div>
+    <button class="cancel-btn" (click)="onCancel()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Cancel
+    </button>
+  </div>
+
+  <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()" class="payment-form">
+    <div class="form-section">
+      <div class="section-header">
+        <h2>Payment Details</h2>
+      </div>
+
+      <div class="form-grid">
+        <!-- Date -->
+        <div class="form-group">
+          <label for="date">Date <span class="required">*</span></label>
+          <input
+            type="date"
+            id="date"
+            formControlName="date"
+            [class.error]="date?.invalid && date?.touched"
+          />
+          <div class="error-message" *ngIf="date?.invalid && date?.touched">
+            Date is required
+          </div>
+        </div>
+
+        <!-- Reference Number (Disabled) -->
+        <div class="form-group">
+          <label for="referenceNumber">Reference Number</label>
+          <input
+            type="text"
+            id="referenceNumber"
+            formControlName="referenceNumber"
+            readonly
+            class="readonly"
+          />
+        </div>
+
+        <!-- Transaction Type (Disabled) -->
+        <div class="form-group">
+          <label for="transactionType">Transaction Type</label>
+          <input
+            type="text"
+            id="transactionType"
+            formControlName="transactionType"
+            readonly
+            class="readonly"
+          />
+        </div>
+
+        <!-- Amount -->
+        <div class="form-group">
+          <label for="amount">Amount <span class="required">*</span></label>
+          <input
+            type="number"
+            id="amount"
+            formControlName="amount"
+            placeholder="Enter amount"
+            min="0.01"
+            step="0.01"
+            [class.error]="amount?.invalid && amount?.touched"
+          />
+          <div class="error-message" *ngIf="amount?.invalid && amount?.touched">
+            <span *ngIf="amount?.errors?.['required']">Amount is required</span>
+            <span *ngIf="amount?.errors?.['min']">Amount must be greater than 0</span>
+          </div>
+        </div>
+
+        <!-- Student Dropdown with Search -->
+        <div class="form-group">
+          <label for="studentId">Student</label>
+          <div class="searchable-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-input-container">
+              <input
+                type="text"
+                id="studentId"
+                [value]="getSelectedStudentName() || studentSearchQuery"
+                (focus)="showStudentDropdown = true"
+                (click)="showStudentDropdown = true"
+                placeholder="Search student by name or reg no..."
+                class="dropdown-input"
+                readonly
+              />
+              <button
+                type="button"
+                class="clear-btn"
+                *ngIf="paymentForm.get('studentId')?.value"
+                (click)="clearStudentSelection(); $event.stopPropagation()"
+                title="Clear selection"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="dropdown-arrow"
+                (click)="showStudentDropdown = !showStudentDropdown"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="dropdown-menu" *ngIf="showStudentDropdown">
+              <div class="dropdown-search">
+                <input
+                  type="text"
+                  [(ngModel)]="studentSearchQuery"
+                  [ngModelOptions]="{standalone: true}"
+                  (input)="onStudentSearch()"
+                  placeholder="Search student..."
+                  class="search-input"
+                  (click)="$event.stopPropagation()"
+                />
+              </div>
+              <div class="dropdown-list">
+                <div
+                  *ngFor="let student of filteredStudents"
+                  class="dropdown-item"
+                  (click)="selectStudent(student)"
+                  [class.selected]="paymentForm.get('studentId')?.value === student.id"
+                >
+                  <div class="item-main">{{ student.regNo }} - {{ student.nameOfApplicant }}</div>
+                </div>
+                <div *ngIf="filteredStudents.length === 0" class="dropdown-empty">
+                  No students found
+                </div>
+              </div>
+            </div>
+            <input type="hidden" formControlName="studentId" />
+          </div>
+        </div>
+
+        <!-- Tutor Dropdown with Search -->
+        <div class="form-group">
+          <label for="tutorId">Tutor</label>
+          <div class="searchable-dropdown" (click)="$event.stopPropagation()">
+            <div class="dropdown-input-container">
+              <input
+                type="text"
+                id="tutorId"
+                [value]="getSelectedTutorName() || tutorSearchQuery"
+                (focus)="showTutorDropdown = true"
+                (click)="showTutorDropdown = true"
+                placeholder="Search tutor by name or reg no..."
+                class="dropdown-input"
+                readonly
+              />
+              <button
+                type="button"
+                class="clear-btn"
+                *ngIf="paymentForm.get('tutorId')?.value"
+                (click)="clearTutorSelection(); $event.stopPropagation()"
+                title="Clear selection"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="dropdown-arrow"
+                (click)="showTutorDropdown = !showTutorDropdown"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="dropdown-menu" *ngIf="showTutorDropdown">
+              <div class="dropdown-search">
+                <input
+                  type="text"
+                  [(ngModel)]="tutorSearchQuery"
+                  [ngModelOptions]="{standalone: true}"
+                  (input)="onTutorSearch()"
+                  placeholder="Search tutor..."
+                  class="search-input"
+                  (click)="$event.stopPropagation()"
+                />
+              </div>
+              <div class="dropdown-list">
+                <div
+                  *ngFor="let tutor of filteredTutors"
+                  class="dropdown-item"
+                  (click)="selectTutor(tutor)"
+                  [class.selected]="paymentForm.get('tutorId')?.value === tutor.id"
+                >
+                  <div class="item-main">{{ tutor.regNo }} - {{ tutor.nameOfApplicant }}</div>
+                </div>
+                <div *ngIf="filteredTutors.length === 0" class="dropdown-empty">
+                  No tutors found
+                </div>
+              </div>
+            </div>
+            <input type="hidden" formControlName="tutorId" />
+          </div>
+        </div>
+
+        <!-- Remarks -->
+        <div class="form-group full-width">
+          <label for="remarks">Remarks</label>
+          <textarea
+            id="remarks"
+            formControlName="remarks"
+            rows="4"
+            placeholder="Enter any additional remarks or notes"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" (click)="onCancel()" [disabled]="isSubmitting">
+        Cancel
+      </button>
+      <button type="submit" class="btn-primary" [disabled]="isSubmitting || paymentForm.invalid">
+        <span *ngIf="!isSubmitting">{{ isEditMode ? 'Update' : 'Submit' }} Payment</span>
+        <span *ngIf="isSubmitting" class="loading">
+          <span class="spinner"></span>
+          Submitting...
+        </span>
+      </button>
+    </div>
+  </form>
+</div>
