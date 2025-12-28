@@ -1,28 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-export interface Course {
-  id: number;
-  courseCode: string;
-  courseName: string;
-  description: string;
-  duration: number;
-  totalFee: number;
-  batchId: number;
-  batchName: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { CourseService, Course } from '../../../../../core/services/course.service';
+import { ToasterService } from '../../../../../core/services/toaster.service';
 
 @Component({
   selector: 'app-course-table',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './course-table.component.html',
-  styleUrl: './course-table.component.scss'
+  styleUrls: ['./course-table.component.scss']
 })
 export class CourseTableComponent implements OnInit {
   allCourses: Course[] = [];
@@ -32,39 +16,30 @@ export class CourseTableComponent implements OnInit {
   itemsPerPage = 10;
   sortColumn: string | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
+  isLoading = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private courseService: CourseService,
+    private toasterService: ToasterService
+  ) {}
 
   ngOnInit(): void {
-    this.loadFakeData();
-    this.filteredCourses = [...this.allCourses];
+    this.loadData();
   }
 
-  private loadFakeData(): void {
-    // Generate fake courses
-    const courseNames = ['Mathematics', 'Science', 'English', 'History', 'Computer Science', 
-                         'Physics', 'Chemistry', 'Biology', 'Economics', 'Geography'];
-    const batchNames = ['Batch 2024', 'Batch 2023', 'Batch 2025', 'Evening Batch', 'Morning Batch'];
-    
-    this.allCourses = Array.from({ length: 30 }, (_, i) => {
-      const name = courseNames[i % courseNames.length];
-      const code = `${name.substring(0, 3).toUpperCase()}${String(i + 1).padStart(3, '0')}`;
-      const batchName = batchNames[i % batchNames.length];
-      const date = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
-      
-      return {
-        id: i + 1,
-        courseCode: code,
-        courseName: `${name} ${i > 9 ? 'Advanced' : ''}`,
-        description: `Comprehensive ${name.toLowerCase()} course covering all essential topics`,
-        duration: [3, 6, 9, 12][i % 4], // months
-        totalFee: Math.floor(Math.random() * 50000) + 10000,
-        batchId: (i % batchNames.length) + 1,
-        batchName: batchName,
-        isActive: i % 5 !== 0, // Some courses inactive
-        createdAt: date,
-        updatedAt: date
-      };
+  private loadData(): void {
+    this.isLoading = true;
+    this.courseService.getAll().subscribe({
+      next: (data: Course[]) => {
+        this.allCourses = data;
+        this.filteredCourses = [...this.allCourses];
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        this.isLoading = false;
+        // Error is handled by interceptor
+      }
     });
   }
 
@@ -160,9 +135,18 @@ export class CourseTableComponent implements OnInit {
   }
 
   deleteCourse(course: Course): void {
+    if (!course.id) return;
+    
     if (confirm(`Are you sure you want to delete ${course.courseName}?`)) {
-      this.allCourses = this.allCourses.filter(c => c.id !== course.id);
-      this.onSearch(); // Refresh filtered list
+      this.courseService.delete(course.id).subscribe({
+        next: () => {
+          this.toasterService.success('Course deleted successfully', 'Success');
+          this.loadData(); // Reload data from API
+        },
+        error: (error: any) => {
+          // Error is handled by interceptor
+        }
+      });
     }
   }
 

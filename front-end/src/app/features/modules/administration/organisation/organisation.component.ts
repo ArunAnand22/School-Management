@@ -1,16 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToasterService } from '../../../../core/services/toaster.service';
+import { OrganisationService, Organisation } from '../../../../core/services/organisation.service';
 import { OrganisationTableComponent } from './organisation-table/organisation-table.component';
 
 @Component({
   selector: 'app-organisation',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, OrganisationTableComponent],
   templateUrl: './organisation.component.html',
-  styleUrl: './organisation.component.scss'
+  styleUrls: ['./organisation.component.scss']
 })
 export class OrganisationComponent implements OnInit {
   organisationForm!: FormGroup;
@@ -35,14 +33,15 @@ export class OrganisationComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private toasterService: ToasterService
+    private toasterService: ToasterService,
+    private organisationService: OrganisationService
   ) {}
 
   ngOnInit(): void {
-    // Check if we're in create or edit mode
-    const routePath = this.route.snapshot.url.map(segment => segment.path).join('/');
-    this.isCreateMode = routePath.includes('create');
-    this.isEditMode = routePath.includes('edit');
+    // Check if we're in create or edit mode using the route URL
+    const url = this.router.url;
+    this.isCreateMode = url.includes('/create');
+    this.isEditMode = url.includes('/edit');
     
     if (this.isEditMode) {
       const id = this.route.snapshot.paramMap.get('id');
@@ -74,9 +73,22 @@ export class OrganisationComponent implements OnInit {
   }
 
   private loadExistingData(): void {
-    // Load existing organisation data (if any)
-    // For now, we'll leave it empty
-    // In real app, this would come from API
+    if (this.isEditMode && this.organisationId) {
+      this.organisationService.getById(this.organisationId).subscribe({
+        next: (org) => {
+          this.organisationForm.patchValue(org);
+          if (org.logo) this.logoPreview = org.logo;
+          if (org.header) this.headerPreview = org.header;
+          if (org.footer) this.footerPreview = org.footer;
+          if (org.seal) this.sealPreview = org.seal;
+          if (org.latitude) this.latitude = org.latitude;
+          if (org.longitude) this.longitude = org.longitude;
+        },
+        error: (error) => {
+          // Error is handled by interceptor
+        }
+      });
+    }
   }
 
   onFileSelected(event: Event, type: 'logo' | 'header' | 'footer' | 'seal'): void {
@@ -198,15 +210,53 @@ export class OrganisationComponent implements OnInit {
   onSubmit(): void {
     if (this.organisationForm.valid) {
       this.isSubmitting = true;
+      // Use getRawValue() to get all values including disabled fields and null values
+      const formValue = this.organisationForm.getRawValue();
       
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        const message = this.isEditMode ? 'Organisation updated successfully!' : 'Organisation created successfully!';
-        this.toasterService.success(message, 'Success');
-        // Navigate back to organisation table
-        this.router.navigate(['/dashboard/administration/organisation']);
-      }, 1000);
+      // Ensure all required fields are present
+      const organisationData: Organisation = {
+        organisationName: formValue.organisationName || '',
+        address: formValue.address || '',
+        phoneNumber: formValue.phoneNumber || '',
+        email: formValue.email || '',
+        website: formValue.website || '',
+        location: formValue.location || '',
+        latitude: formValue.latitude || null,
+        longitude: formValue.longitude || null,
+        logo: formValue.logo || null,
+        header: formValue.header || null,
+        footer: formValue.footer || null,
+        seal: formValue.seal || null,
+        remarks: formValue.remarks || ''
+      };
+      
+      if (this.isEditMode && this.organisationId) {
+        this.organisationService.update(this.organisationId, organisationData).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.toasterService.success('Organisation updated successfully!', 'Success');
+            this.router.navigate(['/dashboard/administration/organisation']);
+          },
+          error: (error) => {
+            this.isSubmitting = false;
+            console.error('Error updating organisation:', error);
+            // Error is handled by interceptor
+          }
+        });
+      } else {
+        this.organisationService.create(organisationData).subscribe({
+          next: (response) => {
+            this.isSubmitting = false;
+            this.toasterService.success('Organisation created successfully!', 'Success');
+            this.router.navigate(['/dashboard/administration/organisation']);
+          },
+          error: (error) => {
+            this.isSubmitting = false;
+            console.error('Error creating organisation:', error);
+            // Error is handled by interceptor
+          }
+        });
+      }
     } else {
       this.markFormGroupTouched();
       this.toasterService.error('Please fill all required fields correctly', 'Validation Error');

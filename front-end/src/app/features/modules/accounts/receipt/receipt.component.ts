@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToasterService } from '../../../../core/services/toaster.service';
+import { ReceiptService, Receipt } from '../../../../core/services/receipt.service';
+import { PersonService, Person } from '../../../../core/services/person.service';
 import { ReceiptTableComponent } from './receipt-table/receipt-table.component';
 
 interface Student {
@@ -19,10 +20,8 @@ interface Tutor {
 
 @Component({
   selector: 'app-receipt',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, ReceiptTableComponent],
   templateUrl: './receipt.component.html',
-  styleUrl: './receipt.component.scss'
+  styleUrls: ['./receipt.component.scss']
 })
 export class ReceiptComponent implements OnInit, OnDestroy {
   receiptForm!: FormGroup;
@@ -45,7 +44,9 @@ export class ReceiptComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private toasterService: ToasterService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private receiptService: ReceiptService,
+    private personService: PersonService
   ) {}
 
   ngOnInit(): void {
@@ -102,31 +103,35 @@ export class ReceiptComponent implements OnInit, OnDestroy {
   }
 
   private loadStudents(): void {
-    // Generate fake students data
-    const names = ['John Doe', 'Jane Smith', 'Michael Johnson', 'Emily Davis', 'David Wilson',
-                   'Sarah Brown', 'Robert Taylor', 'Jessica Martinez', 'William Anderson', 'Ashley Thomas',
-                   'James Jackson', 'Amanda White', 'Christopher Harris', 'Melissa Martin', 'Daniel Thompson'];
-
-    this.students = Array.from({ length: 15 }, (_, i) => ({
-      id: i + 1,
-      regNo: `STU${String(i + 1).padStart(4, '0')}`,
-      nameOfApplicant: names[i % names.length]
-    }));
-    this.filteredStudents = [...this.students];
+    this.personService.getStudents().subscribe({
+      next: (data: Person[]) => {
+        this.students = data.map((p: Person) => ({
+          id: p.id!,
+          regNo: p.regNo,
+          nameOfApplicant: p.nameOfApplicant
+        }));
+        this.filteredStudents = [...this.students];
+      },
+      error: (error: any) => {
+        // Error is handled by interceptor
+      }
+    });
   }
 
   private loadTutors(): void {
-    // Generate fake tutors data
-    const names = ['Dr. Robert Smith', 'Prof. Mary Johnson', 'Dr. James Wilson', 'Prof. Patricia Brown',
-                   'Dr. Michael Davis', 'Prof. Jennifer Martinez', 'Dr. William Anderson', 'Prof. Linda Taylor',
-                   'Dr. Richard Thomas', 'Prof. Barbara Jackson'];
-
-    this.tutors = Array.from({ length: 10 }, (_, i) => ({
-      id: i + 1,
-      regNo: `TUT${String(i + 1).padStart(4, '0')}`,
-      nameOfApplicant: names[i % names.length]
-    }));
-    this.filteredTutors = [...this.tutors];
+    this.personService.getTutors().subscribe({
+      next: (data: Person[]) => {
+        this.tutors = data.map((p: Person) => ({
+          id: p.id!,
+          regNo: p.regNo,
+          nameOfApplicant: p.nameOfApplicant
+        }));
+        this.filteredTutors = [...this.tutors];
+      },
+      error: (error: any) => {
+        // Error is handled by interceptor
+      }
+    });
   }
 
   onStudentSearch(): void {
@@ -226,40 +231,33 @@ export class ReceiptComponent implements OnInit, OnDestroy {
   }
 
   private loadReceiptData(id: number): void {
-    // Simulate fetching receipt data
-    // In real app, this would come from an API
-    const receiptData = {
-      date: new Date().toISOString().split('T')[0],
-      referenceNumber: `REC${Date.now()}`,
-      transactionType: 'out',
-      amount: 5000,
-      studentId: 1,
-      tutorId: null,
-      remarks: 'Receipt for expenses'
-    };
-    
-    // Load students and tutors first, then set form values
+    // Load students and tutors first
     this.loadStudents();
     this.loadTutors();
     
-    // Wait a bit for data to load, then set form values
-    setTimeout(() => {
-      this.receiptForm.patchValue(receiptData);
-      
-      // Update selected names to show selected values
-      if (receiptData.studentId) {
-        const student = this.students.find(s => s.id === receiptData.studentId);
-        if (student) {
-          this.selectedStudentName = `${student.regNo} - ${student.nameOfApplicant}`;
+    // Load receipt data from API
+    this.receiptService.getById(id).subscribe({
+      next: (receipt: Receipt) => {
+        this.receiptForm.patchValue(receipt);
+        
+        // Update selected names to show selected values
+        if (receipt.studentId) {
+          const student = this.students.find(s => s.id === receipt.studentId);
+          if (student) {
+            this.selectedStudentName = `${student.regNo} - ${student.nameOfApplicant}`;
+          }
         }
-      }
-      if (receiptData.tutorId) {
-        const tutor = this.tutors.find(t => t.id === receiptData.tutorId);
-        if (tutor) {
-          this.selectedTutorName = `${tutor.regNo} - ${tutor.nameOfApplicant}`;
+        if (receipt.tutorId) {
+          const tutor = this.tutors.find(t => t.id === receipt.tutorId);
+          if (tutor) {
+            this.selectedTutorName = `${tutor.regNo} - ${tutor.nameOfApplicant}`;
+          }
         }
+      },
+      error: (error: any) => {
+        // Error is handled by interceptor
       }
-    }, 100);
+    });
   }
 
   onSubmit(): void {
@@ -278,12 +276,37 @@ export class ReceiptComponent implements OnInit, OnDestroy {
       
       console.log('Receipt Form Submitted:', formValue);
 
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        this.toasterService.success(`Receipt ${this.isEditMode ? 'updated' : 'recorded'} successfully!`, 'Success');
-        this.router.navigate(['/dashboard/accounts/receipt']);
-      }, 1500);
+      const receiptData = {
+        ...formValue,
+        date: formValue.date || new Date().toISOString().split('T')[0],
+        referenceNumber: formValue.referenceNumber || `REC${Date.now()}`
+      };
+
+      if (this.isEditMode && this.receiptId) {
+        this.receiptService.update(this.receiptId, receiptData).subscribe({
+          next: (): void => {
+            this.isSubmitting = false;
+            this.toasterService.success('Receipt updated successfully!', 'Success');
+            this.router.navigate(['/dashboard/accounts/receipt']);
+          },
+          error: (error: any): void => {
+            this.isSubmitting = false;
+            // Error is handled by interceptor
+          }
+        });
+      } else {
+        this.receiptService.create(receiptData).subscribe({
+          next: (): void => {
+            this.isSubmitting = false;
+            this.toasterService.success('Receipt recorded successfully!', 'Success');
+            this.router.navigate(['/dashboard/accounts/receipt']);
+          },
+          error: (error: any): void => {
+            this.isSubmitting = false;
+            // Error is handled by interceptor
+          }
+        });
+      }
     } else {
       this.markFormGroupTouched(this.receiptForm);
       this.toasterService.error('Please fill all required fields correctly.', 'Validation Error');

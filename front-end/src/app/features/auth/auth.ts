@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_CONFIG } from '../../core/config/api.config';
+import { MockDataService } from '../../core/services/mock-data.service';
 
 export interface LoginRequest {
   username: string;
@@ -23,10 +22,9 @@ export interface LoginResponse {
   providedIn: 'root',
 })
 export class Auth {
-  constructor(private http: HttpClient) {}
+  constructor(private mockDataService: MockDataService) {}
 
   login(username: string, password: string): Observable<LoginResponse> {
-    const loginData: LoginRequest = { username, password };
-    return this.http.post<LoginResponse>(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.login}`, loginData);
+    return this.mockDataService.login(username, password);
   }
 }

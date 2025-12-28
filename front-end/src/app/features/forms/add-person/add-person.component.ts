@@ -1,15 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToasterService } from '../../../core/services/toaster.service';
+import { PersonService } from '../../../core/services/person.service';
 
 @Component({
   selector: 'app-add-person',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './add-person.component.html',
-  styleUrl: './add-person.component.scss'
+  styleUrls: ['./add-person.component.scss']
 })
 export class AddPersonComponent implements OnInit {
   personForm!: FormGroup;
@@ -22,7 +20,8 @@ export class AddPersonComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private toasterService: ToasterService
+    private toasterService: ToasterService,
+    private personService: PersonService
   ) {}
 
   ngOnInit(): void {
@@ -138,19 +137,38 @@ export class AddPersonComponent implements OnInit {
   onSubmit(): void {
     if (this.personForm.valid) {
       this.isSubmitting = true;
+      const formValue = this.personForm.getRawValue();
       
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        const personType = this.isStudent ? 'Student' : 'Tutor';
-        this.toasterService.success(
-          `${personType} added successfully!`,
-          'Success'
-        );
-        
-        // Navigate back to dashboard or list
-        this.router.navigate(['/dashboard']);
-      }, 1500);
+      // Ensure regNo starts with correct prefix
+      if (!formValue.regNo) {
+        const prefix = this.isStudent ? 'STU' : 'TUT';
+        const timestamp = Date.now();
+        formValue.regNo = `${prefix}${String(timestamp).slice(-6)}`;
+      } else if (!formValue.regNo.startsWith(this.isStudent ? 'STU' : 'TUT')) {
+        const prefix = this.isStudent ? 'STU' : 'TUT';
+        formValue.regNo = `${prefix}${formValue.regNo}`;
+      }
+      
+      this.personService.create(formValue).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          const personType = this.isStudent ? 'Student' : 'Tutor';
+          this.toasterService.success(
+            `${personType} added successfully!`,
+            'Success'
+          );
+          
+          // Navigate back to appropriate list
+          const route = this.isStudent 
+            ? ['/dashboard/student/student']
+            : ['/dashboard/staff/staff'];
+          this.router.navigate(route);
+        },
+        error: (error) => {
+          this.isSubmitting = false;
+          // Error is handled by interceptor
+        }
+      });
     } else {
       this.markFormGroupTouched();
       this.toasterService.error('Please fill all required fields correctly', 'Validation Error');

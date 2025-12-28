@@ -1,16 +1,12 @@
 import { Component, EventEmitter, Output, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 import { NetworkService, NetworkStatus } from '../../core/services/network.service';
 import { ToasterService } from '../../core/services/toaster.service';
 import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-header',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.scss'
+  styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   @Output() toggleSidebar = new EventEmitter<void>();
@@ -53,13 +49,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   private checkLowSpeed(status: NetworkStatus): void {
-    if (status.status === 'slow' && !this.lowSpeedNotified) {
+    // Only show warning for genuinely slow connections (poor quality or slow status)
+    // Don't warn for fair/good connections as they're sufficient for web apps
+    if ((status.status === 'slow' || status.quality === 'poor') && !this.lowSpeedNotified) {
+      const speedText = status.speed > 0 ? `${status.speed} Mbps` : 'unknown speed';
       this.toasterService.warning(
-        `Low network speed detected: ${status.speed} Mbps`,
+        `Slow network connection detected (${speedText}). Some features may be slower.`,
         'Network Warning'
       );
       this.lowSpeedNotified = true;
-    } else if (status.status !== 'slow') {
+    } else if (status.status !== 'slow' && status.quality !== 'poor') {
       this.lowSpeedNotified = false;
     }
   }

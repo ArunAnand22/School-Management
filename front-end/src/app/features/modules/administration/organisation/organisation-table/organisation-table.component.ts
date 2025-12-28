@@ -1,33 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-export interface Organisation {
-  id: number;
-  organisationName: string;
-  address: string;
-  phoneNumber: string;
-  email: string;
-  website: string;
-  location: string;
-  latitude: number | null;
-  longitude: number | null;
-  logo: string | null;
-  header: string | null;
-  footer: string | null;
-  seal: string | null;
-  remarks: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { OrganisationService, Organisation } from '../../../../../core/services/organisation.service';
+import { ToasterService } from '../../../../../core/services/toaster.service';
+import { LoaderService } from '../../../../../core/services/loader.service';
 
 @Component({
   selector: 'app-organisation-table',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './organisation-table.component.html',
-  styleUrl: './organisation-table.component.scss'
+  styleUrls: ['./organisation-table.component.scss']
 })
 export class OrganisationTableComponent implements OnInit {
   allOrganisations: Organisation[] = [];
@@ -37,46 +17,37 @@ export class OrganisationTableComponent implements OnInit {
   itemsPerPage = 10;
   sortColumn: string | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
+  isLoading = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private organisationService: OrganisationService,
+    private toasterService: ToasterService,
+    private loaderService: LoaderService
+  ) {}
 
   ngOnInit(): void {
-    this.loadFakeData();
-    this.filteredOrganisations = [...this.allOrganisations];
+    this.loadData();
   }
 
-  private loadFakeData(): void {
-    // Generate fake organisations
-    const names = ['ABC School', 'XYZ Academy', 'Global Education Center', 'Elite Learning Institute', 
-                   'Bright Future School', 'Knowledge Hub', 'Excellence Academy', 'Star Education Center'];
-    
-    const cities = ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego'];
-    
-    this.allOrganisations = Array.from({ length: 8 }, (_, i) => {
-      const name = names[i % names.length];
-      const city = cities[i % cities.length];
-      const date = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
-      
-      return {
-        id: i + 1,
-        organisationName: name,
-        address: `${Math.floor(Math.random() * 1000) + 1} Main Street, ${city}`,
-        phoneNumber: `9${Math.floor(Math.random() * 900000000) + 100000000}`,
-        email: `contact@${name.toLowerCase().replace(/\s+/g, '')}.edu`,
-        website: `https://www.${name.toLowerCase().replace(/\s+/g, '')}.edu`,
-        location: `${city}, State, Country`,
-        latitude: 40 + Math.random() * 10,
-        longitude: -70 - Math.random() * 10,
-        logo: null,
-        header: null,
-        footer: null,
-        seal: null,
-        remarks: i % 3 === 0 ? 'Premium institution' : '',
-        createdAt: date,
-        updatedAt: date
-      };
+  private loadData(): void {
+    this.isLoading = true;
+    this.loaderService.show();
+    this.organisationService.getAll().subscribe({
+      next: (data: Organisation[]) => {
+        this.allOrganisations = data;
+        this.filteredOrganisations = [...this.allOrganisations];
+        this.isLoading = false;
+        this.loaderService.hide();
+      },
+      error: (error: any) => {
+        this.isLoading = false;
+        this.loaderService.hide();
+        // Error is handled by interceptor
+      }
     });
   }
+
 
   onSearch(): void {
     if (!this.searchQuery.trim()) {
@@ -170,9 +141,18 @@ export class OrganisationTableComponent implements OnInit {
   }
 
   deleteOrganisation(org: Organisation): void {
+    if (!org.id) return;
+    
     if (confirm(`Are you sure you want to delete ${org.organisationName}?`)) {
-      this.allOrganisations = this.allOrganisations.filter(o => o.id !== org.id);
-      this.onSearch(); // Refresh filtered list
+      this.organisationService.delete(org.id).subscribe({
+        next: () => {
+          this.toasterService.success('Organisation deleted successfully', 'Success');
+          this.loadData(); // Reload data from API
+        },
+        error: (error: any) => {
+          // Error is handled by interceptor
+        }
+      });
     }
   }
 

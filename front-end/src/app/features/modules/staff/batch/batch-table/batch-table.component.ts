@@ -1,23 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-export interface Batch {
-  id: number;
-  batchName: string;
-  batchCode: string;
-  remarks: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { BatchService, Batch } from '../../../../../core/services/batch.service';
+import { ToasterService } from '../../../../../core/services/toaster.service';
 
 @Component({
   selector: 'app-batch-table',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './batch-table.component.html',
-  styleUrl: './batch-table.component.scss'
+  styleUrls: ['./batch-table.component.scss']
 })
 export class BatchTableComponent implements OnInit {
   allBatches: Batch[] = [];
@@ -27,32 +16,30 @@ export class BatchTableComponent implements OnInit {
   itemsPerPage = 10;
   sortColumn: string | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
+  isLoading = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private batchService: BatchService,
+    private toasterService: ToasterService
+  ) {}
 
   ngOnInit(): void {
-    this.loadFakeData();
-    this.filteredBatches = [...this.allBatches];
+    this.loadData();
   }
 
-  private loadFakeData(): void {
-    // Generate fake batches
-    const batchNames = ['Batch 2024', 'Batch 2023', 'Batch 2025', 'Evening Batch', 'Morning Batch', 
-                        'Weekend Batch', 'Summer Batch', 'Winter Batch', 'Fast Track Batch', 'Regular Batch'];
-    
-    this.allBatches = Array.from({ length: 25 }, (_, i) => {
-      const name = batchNames[i % batchNames.length];
-      const code = `B${String(2020 + (i % 10)).slice(-2)}${String(i % 10 + 1).padStart(2, '0')}`;
-      const date = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
-      
-      return {
-        id: i + 1,
-        batchName: `${name} ${i > 9 ? i : ''}`,
-        batchCode: code,
-        remarks: i % 3 === 0 ? 'Special batch for advanced students' : i % 4 === 0 ? 'Weekend classes available' : '',
-        createdAt: date,
-        updatedAt: date
-      };
+  private loadData(): void {
+    this.isLoading = true;
+    this.batchService.getAll().subscribe({
+      next: (data: Batch[]) => {
+        this.allBatches = data;
+        this.filteredBatches = [...this.allBatches];
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        this.isLoading = false;
+        // Error is handled by interceptor
+      }
     });
   }
 
@@ -143,9 +130,18 @@ export class BatchTableComponent implements OnInit {
   }
 
   deleteBatch(batch: Batch): void {
+    if (!batch.id) return;
+    
     if (confirm(`Are you sure you want to delete ${batch.batchName}?`)) {
-      this.allBatches = this.allBatches.filter(b => b.id !== batch.id);
-      this.onSearch(); // Refresh filtered list
+      this.batchService.delete(batch.id).subscribe({
+        next: () => {
+          this.toasterService.success('Batch deleted successfully', 'Success');
+          this.loadData(); // Reload data from API
+        },
+        error: (error: any) => {
+          // Error is handled by interceptor
+        }
+      });
     }
   }
 

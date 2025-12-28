@@ -1,24 +1,3 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideToastr } from 'ngx-toastr';
-
-import { routes } from './app.routes';
-import { httpInterceptor } from './core/interceptors/http.interceptor';
-
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
-    provideHttpClient(withInterceptors([httpInterceptor])),
-    provideAnimations(),
-    provideToastr({
-      timeOut: 3000,
-      positionClass: 'toast-top-right',
-      preventDuplicates: true,
-      closeButton: true,
-      progressBar: true
-    })
-  ]
-};
+// This file is kept for compatibility but not used in Angular 14
+// Configuration is now in app.module.ts
+export const appConfig = {};

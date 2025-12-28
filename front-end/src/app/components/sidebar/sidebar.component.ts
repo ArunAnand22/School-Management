@@ -1,6 +1,4 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 interface NavItem {
@@ -18,10 +16,8 @@ interface NavModule {
 
 @Component({
   selector: 'app-sidebar',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss'
+  styleUrls: ['./sidebar.component.scss']
 })
 export class SidebarComponent {
   @Input() collapsed = false;

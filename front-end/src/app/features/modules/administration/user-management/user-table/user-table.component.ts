@@ -1,70 +1,64 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { UserService, User } from '../../../../../core/services/user.service';
+import { ToasterService } from '../../../../../core/services/toaster.service';
 
-export interface User {
-  id: number;
-  userId: string;
-  tutorId: number;
+interface UserWithTutorInfo extends User {
   tutorName: string;
   tutorRegNo: string;
-  username: string;
-  canLogin: boolean;
-  createdAt: string;
 }
 
 @Component({
   selector: 'app-user-table',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './user-table.component.html',
-  styleUrl: './user-table.component.scss'
+  styleUrls: ['./user-table.component.scss']
 })
 export class UserTableComponent implements OnInit {
-  allUsers: User[] = [];
-  filteredUsers: User[] = [];
+  allUsers: UserWithTutorInfo[] = [];
+  filteredUsers: UserWithTutorInfo[] = [];
   searchQuery = '';
   currentPage = 1;
   itemsPerPage = 10;
   sortColumn: string | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  constructor(private router: Router) {}
+  isLoading = false;
+
+  constructor(
+    private router: Router,
+    private userService: UserService,
+    private toasterService: ToasterService
+  ) {}
 
   ngOnInit(): void {
-    this.loadFakeData();
-    this.filteredUsers = [...this.allUsers];
+    this.loadData();
   }
 
-  private loadFakeData(): void {
-    // Generate fake users
-    const tutorNames = ['Dr. Robert Smith', 'Prof. Mary Johnson', 'Dr. James Wilson', 'Prof. Patricia Brown', 
-                        'Dr. Michael Davis', 'Prof. Jennifer Martinez', 'Dr. William Anderson', 'Prof. Linda Taylor',
-                        'Dr. Richard Thomas', 'Prof. Barbara Jackson'];
-    
-    this.allUsers = Array.from({ length: 25 }, (_, i) => {
-      const tutorIndex = i % tutorNames.length;
-      const tutorName = tutorNames[tutorIndex];
-      const regNo = `TUT${String(tutorIndex + 1).padStart(4, '0')}`;
-      const userId = `USR${String(tutorIndex + 1).padStart(4, '0')}`;
-      const username = tutorName.toLowerCase()
-        .replace(/[.\s]/g, '.')
-        .replace(/dr\.|prof\./g, '')
-        .trim();
-      
-      return {
-        id: i + 1,
-        userId,
-        tutorId: tutorIndex + 1,
-        tutorName,
-        tutorRegNo: regNo,
-        username: `${username}${i > tutorNames.length ? i : ''}`,
-        canLogin: i % 3 !== 0, // Some users can't login
-        createdAt: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0]
-      };
+  private loadData(): void {
+    this.isLoading = true;
+    this.userService.getAll().subscribe({
+      next: (data: User[]) => {
+        // Transform API data to match component interface
+        this.allUsers = data.map((u: User) => ({
+          id: u.id!,
+          userId: u.userId,
+          tutorId: u.tutorId || 0,
+          tutorName: '', // Will be populated from person data if needed
+          tutorRegNo: '', // Will be populated from person data if needed
+          username: u.username,
+          canLogin: u.canLogin,
+          createdAt: u.createdAt || ''
+        }));
+        this.filteredUsers = [...this.allUsers];
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        this.isLoading = false;
+        // Error is handled by interceptor
+      }
     });
   }
+
 
   onSearch(): void {
     if (!this.searchQuery.trim()) {
@@ -101,7 +95,7 @@ export class UserTableComponent implements OnInit {
     });
   }
 
-  get paginatedUsers(): User[] {
+  get paginatedUsers(): UserWithTutorInfo[] {
     const start = (this.currentPage - 1) * this.itemsPerPage;
     const end = start + this.itemsPerPage;
     return this.filteredUsers.slice(start, end);
@@ -157,9 +151,18 @@ export class UserTableComponent implements OnInit {
   }
 
   deleteUser(user: User): void {
+    if (!user.id) return;
+    
     if (confirm(`Are you sure you want to delete user ${user.username}?`)) {
-      this.allUsers = this.allUsers.filter(u => u.id !== user.id);
-      this.onSearch(); // Refresh filtered list
+      this.userService.delete(user.id).subscribe({
+        next: () => {
+          this.toasterService.success('User deleted successfully', 'Success');
+          this.loadData(); // Reload data from API
+        },
+        error: (error: any) => {
+          // Error is handled by interceptor
+        }
+      });
     }
   }
 

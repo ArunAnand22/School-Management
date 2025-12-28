@@ -1,0 +1,155 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "password": "admin123",
+      "userId": "USR0001",
+      "tutorId": null,
+      "canLogin": true,
+      "role": "admin",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "organisations": [
+    {
+      "id": 1,
+      "organisationName": "ABC School",
+      "address": "123 Main Street, New York",
+      "phoneNumber": "9123456789",
+      "email": "contact@abcschool.edu",
+      "website": "https://www.abcschool.edu",
+      "location": "New York, State, Country",
+      "latitude": 40.7128,
+      "longitude": -74.0060,
+      "logo": null,
+      "header": null,
+      "footer": null,
+      "seal": null,
+      "remarks": "Premium institution",
+      "createdAt": "2024-01-15",
+      "updatedAt": "2024-01-15"
+    }
+  ],
+  "persons": [
+    {
+      "id": 1,
+      "regNo": "STU0001",
+      "date": "2024-01-10",
+      "nameOfApplicant": "John Doe",
+      "nameOfCourse": "Mathematics",
+      "nameOfGuardian": "Jane Doe",
+      "relationshipWithGuardian": "Guardian",
+      "occupationOfGuardian": "Engineer",
+      "permanentAddress": "123 Student Street, City",
+      "mobileNumber": "9123456789",
+      "homeContact": "8123456789",
+      "dateOfBirth": "2005-05-15",
+      "sex": "Male",
+      "maritalStatus": "Single",
+      "religion": "Hindu",
+      "religionCategory": "OBC",
+      "educationalQualification": "High School",
+      "email": "john.doe@example.com",
+      "applicationNumber": "APP00001",
+      "classTime": "09:00",
+      "totalCourseFee": 50000,
+      "feeDetails": "Full payment",
+      "admittedBy": "HR Manager 1",
+      "remarks": "Excellent student"
+    },
+    {
+      "id": 2,
+      "regNo": "TUT0001",
+      "date": "2024-01-05",
+      "nameOfApplicant": "Dr. Robert Smith",
+      "nameOfCourse": "Advanced Mathematics",
+      "nameOfGuardian": "Self",
+      "relationshipWithGuardian": "Self",
+      "occupationOfGuardian": "Professor",
+      "permanentAddress": "456 Faculty Street, City",
+      "mobileNumber": "9234567890",
+      "homeContact": "8234567890",
+      "dateOfBirth": "1975-03-20",
+      "sex": "Male",
+      "maritalStatus": "Married",
+      "religion": "Christian",
+      "religionCategory": "Other",
+      "educationalQualification": "PhD",
+      "email": "robert.smith@university.edu",
+      "applicationNumber": "APP00002",
+      "classTime": "10:00",
+      "totalCourseFee": 0,
+      "feeDetails": "N/A",
+      "admittedBy": "HR Manager 1",
+      "remarks": "Senior faculty member"
+    }
+  ],
+  "batches": [
+    {
+      "id": 1,
+      "batchName": "Batch 2024",
+      "batchCode": "B2401",
+      "remarks": "Special batch for advanced students",
+      "createdAt": "2024-01-01",
+      "updatedAt": "2024-01-01"
+    }
+  ],
+  "courses": [
+    {
+      "id": 1,
+      "courseCode": "MAT001",
+      "courseName": "Mathematics",
+      "description": "Comprehensive mathematics course covering all essential topics",
+      "duration": 6,
+      "totalFee": 25000,
+      "batchId": 1,
+      "batchName": "Batch 2024",
+      "isActive": true,
+      "createdAt": "2024-01-10",
+      "updatedAt": "2024-01-10"
+    }
+  ],
+  "payments": [
+    {
+      "id": 1,
+      "date": "2024-01-20",
+      "referenceNumber": "REF20240120001",
+      "transactionType": "in",
+      "amount": 25000,
+      "studentId": 1,
+      "studentName": "John Doe",
+      "studentRegNo": "STU0001",
+      "tutorId": null,
+      "tutorName": null,
+      "tutorRegNo": null,
+      "remarks": "Payment received",
+      "createdAt": "2024-01-20T10:00:00.000Z"
+    }
+  ],
+  "receipts": [
+    {
+      "id": 1,
+      "date": "2024-01-21",
+      "referenceNumber": "REC000001",
+      "transactionType": "out",
+      "amount": 5000,
+      "studentId": 1,
+      "studentName": "John Doe",
+      "studentRegNo": "STU0001",
+      "tutorId": null,
+      "tutorName": null,
+      "tutorRegNo": null,
+      "remarks": "Receipt 1 remarks",
+      "createdAt": "2024-01-21T10:00:00.000Z"
+    }
+  ]
+}
+
+
+
+
+
+
+
+

@@ -1,17 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToasterService } from '../../../../core/services/toaster.service';
-import { Person } from '../../../tables/person-table/person-table.component';
+import { UserService } from '../../../../core/services/user.service';
+import { PersonService, Person } from '../../../../core/services/person.service';
 import { UserTableComponent } from './user-table/user-table.component';
 
 @Component({
   selector: 'app-user-management',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, UserTableComponent],
   templateUrl: './user-management.component.html',
-  styleUrl: './user-management.component.scss'
+  styleUrls: ['./user-management.component.scss']
 })
 export class UserManagementComponent implements OnInit {
   userForm!: FormGroup;
@@ -23,7 +21,9 @@ export class UserManagementComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private toasterService: ToasterService
+    private toasterService: ToasterService,
+    private userService: UserService,
+    private personService: PersonService
   ) {}
 
   ngOnInit(): void {
@@ -33,64 +33,48 @@ export class UserManagementComponent implements OnInit {
     
     this.loadTutors();
     this.initializeForm();
+    
+    // Auto-generate user ID if in create mode
+    if (this.isCreateMode) {
+      this.generateUserId();
+    }
   }
 
   private loadTutors(): void {
-    // Load tutors from the staff data
-    // For now, we'll generate fake tutors
-    this.tutors = this.generateFakeTutors();
+    this.personService.getTutors().subscribe({
+      next: (data) => {
+        this.tutors = data;
+      },
+      error: (error) => {
+        // Error is handled by interceptor
+      }
+    });
   }
 
-  private generateFakeTutors(): Person[] {
-    const names = ['Dr. Robert Smith', 'Prof. Mary Johnson', 'Dr. James Wilson', 'Prof. Patricia Brown', 
-                   'Dr. Michael Davis', 'Prof. Jennifer Martinez', 'Dr. William Anderson', 'Prof. Linda Taylor',
-                   'Dr. Richard Thomas', 'Prof. Barbara Jackson', 'Dr. Joseph White', 'Prof. Susan Harris',
-                   'Dr. Charles Martin', 'Prof. Jessica Thompson', 'Dr. Thomas Garcia', 'Prof. Sarah Martinez',
-                   'Dr. Christopher Robinson', 'Prof. Nancy Clark', 'Dr. Daniel Rodriguez', 'Prof. Lisa Lewis'];
-    
-    const courses = ['Advanced Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science', 
-                     'English Literature', 'History', 'Economics'];
-    const relationships = ['Self', 'Spouse', 'Guardian'];
-    const occupations = ['Professor', 'Associate Professor', 'Assistant Professor', 'Lecturer'];
-    const religions = ['Hindu', 'Muslim', 'Christian', 'Sikh'];
-    const categories = ['OBC', 'Other', 'Minority'];
-    const qualifications = ['PhD', 'Masters', 'Post Graduate', 'Graduate'];
-    const sexes = ['Male', 'Female'];
-    const maritalStatuses = ['Married', 'Single'];
-
-    return Array.from({ length: 20 }, (_, i) => {
-      const name = names[i % names.length];
-      const course = courses[i % courses.length];
-      const regNo = `TUT${String(i + 1).padStart(4, '0')}`;
-      const date = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
-      const dob = new Date(1970 + Math.floor(Math.random() * 20), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString().split('T')[0];
-      
-      return {
-        id: i + 1,
-        regNo,
-        date,
-        nameOfApplicant: name,
-        nameOfCourse: course,
-        nameOfGuardian: i % 3 === 0 ? name : `${name.split(' ')[0]}'s Spouse`,
-        relationshipWithGuardian: relationships[i % relationships.length],
-        occupationOfGuardian: occupations[i % occupations.length],
-        permanentAddress: `${Math.floor(Math.random() * 1000) + 1} Faculty Street, City ${i + 1}`,
-        mobileNumber: `9${Math.floor(Math.random() * 900000000) + 100000000}`,
-        homeContact: `8${Math.floor(Math.random() * 900000000) + 100000000}`,
-        dateOfBirth: dob,
-        sex: sexes[i % sexes.length],
-        maritalStatus: maritalStatuses[i % maritalStatuses.length],
-        religion: religions[i % religions.length],
-        religionCategory: categories[i % categories.length],
-        educationalQualification: qualifications[i % qualifications.length],
-        email: `${name.toLowerCase().replace(/[.\s]/g, '.')}@university.edu`,
-        applicationNumber: `APP${String(i + 1).padStart(5, '0')}`,
-        classTime: `${String(8 + (i % 6)).padStart(2, '0')}:00`,
-        totalCourseFee: 0,
-        feeDetails: 'N/A',
-        admittedBy: `HR Manager ${String((i % 3) + 1)}`,
-        remarks: i % 4 === 0 ? 'Senior faculty member' : ''
-      };
+  private generateUserId(): void {
+    this.userService.getAll().subscribe({
+      next: (users) => {
+        // Find the highest user ID number
+        let maxNumber = 0;
+        users.forEach(user => {
+          if (user.userId && user.userId.startsWith('USR')) {
+            const numberPart = user.userId.replace('USR', '');
+            const number = parseInt(numberPart, 10);
+            if (!isNaN(number) && number > maxNumber) {
+              maxNumber = number;
+            }
+          }
+        });
+        
+        // Generate next user ID
+        const nextNumber = maxNumber + 1;
+        const newUserId = `USR${String(nextNumber).padStart(4, '0')}`;
+        this.userForm.patchValue({ userId: newUserId });
+      },
+      error: (error) => {
+        // If error, start with USR0001
+        this.userForm.patchValue({ userId: 'USR0001' });
+      }
     });
   }
 
@@ -123,10 +107,6 @@ export class UserManagementComponent implements OnInit {
     if (selectedTutorId) {
       const tutor = this.tutors.find(t => t.id === selectedTutorId);
       if (tutor) {
-        // Generate user ID based on tutor's reg number
-        const userId = `USR${tutor.regNo.replace('TUT', '')}`;
-        this.userForm.patchValue({ userId });
-        
         // Auto-fill username if empty
         if (!this.userForm.get('username')?.value) {
           const username = tutor.nameOfApplicant.toLowerCase()
@@ -137,7 +117,8 @@ export class UserManagementComponent implements OnInit {
         }
       }
     } else {
-      this.userForm.patchValue({ userId: '', username: '' });
+      // Clear username if tutor is deselected, but keep the auto-generated user ID
+      this.userForm.patchValue({ username: '' });
     }
   }
 
@@ -145,13 +126,27 @@ export class UserManagementComponent implements OnInit {
     if (this.userForm.valid) {
       this.isSubmitting = true;
       
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        this.toasterService.success('User created successfully!', 'Success');
-        // Navigate back to user management table
-        this.router.navigate(['/dashboard/administration/user-management']);
-      }, 1000);
+      const formValue = this.userForm.getRawValue();
+      const userData = {
+        username: formValue.username,
+        password: formValue.password,
+        userId: formValue.userId,
+        tutorId: formValue.tutor ? parseInt(formValue.tutor, 10) : null,
+        canLogin: formValue.canLogin,
+        role: 'user'
+      };
+
+      this.userService.create(userData).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          this.toasterService.success('User created successfully!', 'Success');
+          this.router.navigate(['/dashboard/administration/user-management']);
+        },
+        error: (error) => {
+          this.isSubmitting = false;
+          // Error is handled by interceptor
+        }
+      });
     } else {
       this.markFormGroupTouched();
       this.toasterService.error('Please fill all required fields correctly', 'Validation Error');

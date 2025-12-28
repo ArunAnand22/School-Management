@@ -1,16 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToasterService } from '../../../../core/services/toaster.service';
+import { BatchService } from '../../../../core/services/batch.service';
 import { BatchTableComponent } from './batch-table/batch-table.component';
 
 @Component({
   selector: 'app-batch',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BatchTableComponent],
   templateUrl: './batch.component.html',
-  styleUrl: './batch.component.scss'
+  styleUrls: ['./batch.component.scss']
 })
 export class BatchComponent implements OnInit {
   batchForm!: FormGroup;
@@ -23,7 +21,8 @@ export class BatchComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private toasterService: ToasterService
+    private toasterService: ToasterService,
+    private batchService: BatchService
   ) {}
 
   ngOnInit(): void {
@@ -52,27 +51,48 @@ export class BatchComponent implements OnInit {
   }
 
   private loadExistingData(): void {
-    // Load existing batch data if editing
-    // For now, we'll leave it empty
-    // In real app, this would come from API
     if (this.isEditMode && this.batchId) {
-      // Simulate loading data
-      // this.batchForm.patchValue({ ... });
+      this.batchService.getById(this.batchId).subscribe({
+        next: (batch) => {
+          this.batchForm.patchValue(batch);
+        },
+        error: (error) => {
+          // Error is handled by interceptor
+        }
+      });
     }
   }
 
   onSubmit(): void {
     if (this.batchForm.valid) {
       this.isSubmitting = true;
+      const formValue = this.batchForm.value;
       
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        const message = this.isEditMode ? 'Batch updated successfully!' : 'Batch created successfully!';
-        this.toasterService.success(message, 'Success');
-        // Navigate back to batch table
-        this.router.navigate(['/dashboard/staff/batch']);
-      }, 1000);
+      if (this.isEditMode && this.batchId) {
+        this.batchService.update(this.batchId, formValue).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.toasterService.success('Batch updated successfully!', 'Success');
+            this.router.navigate(['/dashboard/staff/batch']);
+          },
+          error: (error) => {
+            this.isSubmitting = false;
+            // Error is handled by interceptor
+          }
+        });
+      } else {
+        this.batchService.create(formValue).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.toasterService.success('Batch created successfully!', 'Success');
+            this.router.navigate(['/dashboard/staff/batch']);
+          },
+          error: (error) => {
+            this.isSubmitting = false;
+            // Error is handled by interceptor
+          }
+        });
+      }
     } else {
       this.markFormGroupTouched();
       this.toasterService.error('Please fill all required fields correctly', 'Validation Error');

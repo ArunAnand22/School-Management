@@ -2,6 +2,22 @@ import { Routes } from '@angular/router';
 import { LoginComponent } from './features/auth/login/login.component';
 import { MainLayoutComponent } from './layouts/main-layout/main-layout.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
+import { OrganisationTableComponent } from './features/modules/administration/organisation/organisation-table/organisation-table.component';
+import { OrganisationComponent } from './features/modules/administration/organisation/organisation.component';
+import { UserTableComponent } from './features/modules/administration/user-management/user-table/user-table.component';
+import { UserManagementComponent } from './features/modules/administration/user-management/user-management.component';
+import { BatchTableComponent } from './features/modules/staff/batch/batch-table/batch-table.component';
+import { BatchComponent } from './features/modules/staff/batch/batch.component';
+import { CourseTableComponent } from './features/modules/staff/course/course-table/course-table.component';
+import { CourseComponent } from './features/modules/staff/course/course.component';
+import { StaffComponent } from './features/modules/staff/staff/staff.component';
+import { AddPersonComponent } from './features/forms/add-person/add-person.component';
+import { PersonTableComponent } from './features/tables/person-table/person-table.component';
+import { PaymentComponent } from './features/modules/accounts/payment/payment.component';
+import { ReceiptComponent } from './features/modules/accounts/receipt/receipt.component';
+import { ProfitLossComponent } from './features/modules/accounts/profit-loss/profit-loss.component';
+import { SettingsComponent } from './features/modules/settings/settings.component';
+import { ProfileComponent } from './features/modules/profile/profile.component';
 
 export const routes: Routes = [
   {
@@ -22,23 +38,23 @@ export const routes: Routes = [
         children: [
           {
             path: 'organisation',
-            loadComponent: () => import('./features/modules/administration/organisation/organisation-table/organisation-table.component').then(m => m.OrganisationTableComponent)
+            component: OrganisationTableComponent
           },
           {
             path: 'organisation/create',
-            loadComponent: () => import('./features/modules/administration/organisation/organisation.component').then(m => m.OrganisationComponent)
+            component: OrganisationComponent
           },
           {
             path: 'organisation/edit/:id',
-            loadComponent: () => import('./features/modules/administration/organisation/organisation.component').then(m => m.OrganisationComponent)
+            component: OrganisationComponent
           },
           {
             path: 'user-management',
-            loadComponent: () => import('./features/modules/administration/user-management/user-table/user-table.component').then(m => m.UserTableComponent)
+            component: UserTableComponent
           },
           {
             path: 'user-management/create',
-            loadComponent: () => import('./features/modules/administration/user-management/user-management.component').then(m => m.UserManagementComponent)
+            component: UserManagementComponent
           }
         ]
       },
@@ -48,35 +64,35 @@ export const routes: Routes = [
         children: [
           {
             path: 'batch',
-            loadComponent: () => import('./features/modules/staff/batch/batch-table/batch-table.component').then(m => m.BatchTableComponent)
+            component: BatchTableComponent
           },
           {
             path: 'batch/create',
-            loadComponent: () => import('./features/modules/staff/batch/batch.component').then(m => m.BatchComponent)
+            component: BatchComponent
           },
           {
             path: 'batch/edit/:id',
-            loadComponent: () => import('./features/modules/staff/batch/batch.component').then(m => m.BatchComponent)
+            component: BatchComponent
           },
           {
             path: 'course',
-            loadComponent: () => import('./features/modules/staff/course/course-table/course-table.component').then(m => m.CourseTableComponent)
+            component: CourseTableComponent
           },
           {
             path: 'course/create',
-            loadComponent: () => import('./features/modules/staff/course/course.component').then(m => m.CourseComponent)
+            component: CourseComponent
           },
           {
             path: 'course/edit/:id',
-            loadComponent: () => import('./features/modules/staff/course/course.component').then(m => m.CourseComponent)
+            component: CourseComponent
           },
           {
             path: 'staff',
-            loadComponent: () => import('./features/modules/staff/staff/staff.component').then(m => m.StaffComponent)
+            component: StaffComponent
           },
           {
             path: 'add-staff',
-            loadComponent: () => import('./features/forms/add-person/add-person.component').then(m => m.AddPersonComponent)
+            component: AddPersonComponent
           }
         ]
       },
@@ -86,11 +102,11 @@ export const routes: Routes = [
         children: [
           {
             path: 'student',
-            loadComponent: () => import('./features/tables/person-table/person-table.component').then(m => m.PersonTableComponent)
+            component: PersonTableComponent
           },
           {
             path: 'add-student',
-            loadComponent: () => import('./features/forms/add-person/add-person.component').then(m => m.AddPersonComponent)
+            component: AddPersonComponent
           }
         ]
       },
@@ -100,43 +116,43 @@ export const routes: Routes = [
         children: [
           {
             path: 'payment',
-            loadComponent: () => import('./features/modules/accounts/payment/payment.component').then(m => m.PaymentComponent)
+            component: PaymentComponent
           },
           {
             path: 'payment/create',
-            loadComponent: () => import('./features/modules/accounts/payment/payment.component').then(m => m.PaymentComponent)
+            component: PaymentComponent
           },
           {
             path: 'payment/edit/:id',
-            loadComponent: () => import('./features/modules/accounts/payment/payment.component').then(m => m.PaymentComponent)
+            component: PaymentComponent
           },
-              {
-                path: 'receipt',
-                loadComponent: () => import('./features/modules/accounts/receipt/receipt.component').then(m => m.ReceiptComponent)
-              },
-              {
-                path: 'receipt/create',
-                loadComponent: () => import('./features/modules/accounts/receipt/receipt.component').then(m => m.ReceiptComponent)
-              },
-              {
-                path: 'receipt/edit/:id',
-                loadComponent: () => import('./features/modules/accounts/receipt/receipt.component').then(m => m.ReceiptComponent)
-              },
+          {
+            path: 'receipt',
+            component: ReceiptComponent
+          },
+          {
+            path: 'receipt/create',
+            component: ReceiptComponent
+          },
+          {
+            path: 'receipt/edit/:id',
+            component: ReceiptComponent
+          },
           {
             path: 'profit-loss',
-            loadComponent: () => import('./features/modules/accounts/profit-loss/profit-loss.component').then(m => m.ProfitLossComponent)
+            component: ProfitLossComponent
           }
         ]
       },
       // Settings
       {
         path: 'settings',
-        loadComponent: () => import('./features/modules/settings/settings.component').then(m => m.SettingsComponent)
+        component: SettingsComponent
       },
       // Profile
       {
         path: 'profile',
-        loadComponent: () => import('./features/modules/profile/profile.component').then(m => m.ProfileComponent)
+        component: ProfileComponent
       }
     ]
   },

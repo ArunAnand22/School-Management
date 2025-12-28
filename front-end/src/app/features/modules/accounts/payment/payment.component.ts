@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToasterService } from '../../../../core/services/toaster.service';
+import { PaymentService, Payment } from '../../../../core/services/payment.service';
+import { PersonService, Person } from '../../../../core/services/person.service';
 import { PaymentTableComponent } from './payment-table/payment-table.component';
 
 interface Student {
@@ -19,10 +20,8 @@ interface Tutor {
 
 @Component({
   selector: 'app-payment',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, PaymentTableComponent],
   templateUrl: './payment.component.html',
-  styleUrl: './payment.component.scss'
+  styleUrls: ['./payment.component.scss']
 })
 export class PaymentComponent implements OnInit, OnDestroy {
   paymentForm!: FormGroup;
@@ -45,7 +44,9 @@ export class PaymentComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private toasterService: ToasterService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private paymentService: PaymentService,
+    private personService: PersonService
   ) {}
 
   ngOnInit(): void {
@@ -101,31 +102,35 @@ export class PaymentComponent implements OnInit, OnDestroy {
   }
 
   private loadStudents(): void {
-    // Generate fake students data
-    const names = ['John Doe', 'Jane Smith', 'Michael Johnson', 'Emily Davis', 'David Wilson',
-                   'Sarah Brown', 'Robert Taylor', 'Jessica Martinez', 'William Anderson', 'Ashley Thomas',
-                   'James Jackson', 'Amanda White', 'Christopher Harris', 'Melissa Martin', 'Daniel Thompson'];
-
-    this.students = Array.from({ length: 15 }, (_, i) => ({
-      id: i + 1,
-      regNo: `STU${String(i + 1).padStart(4, '0')}`,
-      nameOfApplicant: names[i % names.length]
-    }));
-    this.filteredStudents = [...this.students];
+    this.personService.getStudents().subscribe({
+      next: (data: Person[]) => {
+        this.students = data.map((p: Person) => ({
+          id: p.id!,
+          regNo: p.regNo,
+          nameOfApplicant: p.nameOfApplicant
+        }));
+        this.filteredStudents = [...this.students];
+      },
+      error: (error: any) => {
+        // Error is handled by interceptor
+      }
+    });
   }
 
   private loadTutors(): void {
-    // Generate fake tutors data
-    const names = ['Dr. Robert Smith', 'Prof. Mary Johnson', 'Dr. James Wilson', 'Prof. Patricia Brown',
-                   'Dr. Michael Davis', 'Prof. Jennifer Martinez', 'Dr. William Anderson', 'Prof. Linda Taylor',
-                   'Dr. Richard Thomas', 'Prof. Barbara Jackson'];
-
-    this.tutors = Array.from({ length: 10 }, (_, i) => ({
-      id: i + 1,
-      regNo: `TUT${String(i + 1).padStart(4, '0')}`,
-      nameOfApplicant: names[i % names.length]
-    }));
-    this.filteredTutors = [...this.tutors];
+    this.personService.getTutors().subscribe({
+      next: (data: Person[]) => {
+        this.tutors = data.map((p: Person) => ({
+          id: p.id!,
+          regNo: p.regNo,
+          nameOfApplicant: p.nameOfApplicant
+        }));
+        this.filteredTutors = [...this.tutors];
+      },
+      error: (error: any) => {
+        // Error is handled by interceptor
+      }
+    });
   }
 
   onStudentSearch(): void {
@@ -231,40 +236,33 @@ export class PaymentComponent implements OnInit, OnDestroy {
   }
 
   private loadPaymentData(id: number): void {
-    // Simulate fetching payment data
-    // In real app, this would come from an API
-    const paymentData = {
-      date: new Date().toISOString().split('T')[0],
-      referenceNumber: `REF${Date.now()}`,
-      transactionType: 'in',
-      amount: 5000,
-      studentId: 1,
-      tutorId: null,
-      remarks: 'Payment for course fees'
-    };
-    
-    // Load students and tutors first, then set form values
+    // Load students and tutors first
     this.loadStudents();
     this.loadTutors();
     
-    // Wait a bit for data to load, then set form values
-    setTimeout(() => {
-      this.paymentForm.patchValue(paymentData);
-      
-      // Update selected names to show selected values
-      if (paymentData.studentId) {
-        const student = this.students.find(s => s.id === paymentData.studentId);
-        if (student) {
-          this.selectedStudentName = `${student.regNo} - ${student.nameOfApplicant}`;
+    // Load payment data from API
+    this.paymentService.getById(id).subscribe({
+      next: (payment: Payment) => {
+        this.paymentForm.patchValue(payment);
+        
+        // Update selected names to show selected values
+        if (payment.studentId) {
+          const student = this.students.find(s => s.id === payment.studentId);
+          if (student) {
+            this.selectedStudentName = `${student.regNo} - ${student.nameOfApplicant}`;
+          }
         }
-      }
-      if (paymentData.tutorId) {
-        const tutor = this.tutors.find(t => t.id === paymentData.tutorId);
-        if (tutor) {
-          this.selectedTutorName = `${tutor.regNo} - ${tutor.nameOfApplicant}`;
+        if (payment.tutorId) {
+          const tutor = this.tutors.find(t => t.id === payment.tutorId);
+          if (tutor) {
+            this.selectedTutorName = `${tutor.regNo} - ${tutor.nameOfApplicant}`;
+          }
         }
+      },
+      error: (error: any) => {
+        // Error is handled by interceptor
       }
-    }, 100);
+    });
   }
 
   onSubmit(): void {
@@ -281,14 +279,37 @@ export class PaymentComponent implements OnInit, OnDestroy {
       this.isSubmitting = true;
       const formValue = this.paymentForm.getRawValue(); // Use getRawValue to get disabled field values
       
-      console.log('Payment Form Submitted:', formValue);
+      const paymentData = {
+        ...formValue,
+        date: formValue.date || new Date().toISOString().split('T')[0],
+        referenceNumber: formValue.referenceNumber || `REF${Date.now()}`
+      };
 
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        this.toasterService.success(`Payment ${this.isEditMode ? 'updated' : 'recorded'} successfully!`, 'Success');
-        this.router.navigate(['/dashboard/accounts/payment']);
-      }, 1500);
+      if (this.isEditMode && this.paymentId) {
+        this.paymentService.update(this.paymentId, paymentData).subscribe({
+          next: (): void => {
+            this.isSubmitting = false;
+            this.toasterService.success('Payment updated successfully!', 'Success');
+            this.router.navigate(['/dashboard/accounts/payment']);
+          },
+          error: (error: any): void => {
+            this.isSubmitting = false;
+            // Error is handled by interceptor
+          }
+        });
+      } else {
+        this.paymentService.create(paymentData).subscribe({
+          next: (): void => {
+            this.isSubmitting = false;
+            this.toasterService.success('Payment recorded successfully!', 'Success');
+            this.router.navigate(['/dashboard/accounts/payment']);
+          },
+          error: (error: any): void => {
+            this.isSubmitting = false;
+            // Error is handled by interceptor
+          }
+        });
+      }
     } else {
       this.markFormGroupTouched(this.paymentForm);
       this.toasterService.error('Please fill all required fields correctly.', 'Validation Error');

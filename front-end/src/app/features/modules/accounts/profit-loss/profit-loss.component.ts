@@ -1,10 +1,7 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-profit-loss',
-  standalone: true,
-  imports: [CommonModule],
   template: `
     <div class="module-container">
       <div class="module-header">

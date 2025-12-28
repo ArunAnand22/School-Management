@@ -1,30 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-export interface Payment {
-  id: number;
-  date: string;
-  referenceNumber: string;
-  transactionType: string;
-  amount: number;
-  studentId?: number;
-  studentName?: string;
-  studentRegNo?: string;
-  tutorId?: number;
-  tutorName?: string;
-  tutorRegNo?: string;
-  remarks?: string;
-  createdAt: string;
-}
+import { PaymentService, Payment } from '../../../../../core/services/payment.service';
+import { ToasterService } from '../../../../../core/services/toaster.service';
 
 @Component({
   selector: 'app-payment-table',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './payment-table.component.html',
-  styleUrl: './payment-table.component.scss'
+  styleUrls: ['./payment-table.component.scss']
 })
 export class PaymentTableComponent implements OnInit {
   allPayments: Payment[] = [];
@@ -34,59 +16,36 @@ export class PaymentTableComponent implements OnInit {
   itemsPerPage = 10;
   sortColumn: string | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
+  isLoading = false;
   
   // Expose Math to template
   Math = Math;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private paymentService: PaymentService,
+    private toasterService: ToasterService
+  ) {}
 
   ngOnInit(): void {
-    this.loadFakeData();
-    this.filteredPayments = [...this.allPayments];
+    this.loadData();
   }
 
-  private loadFakeData(): void {
-    const students = [
-      { id: 1, name: 'John Doe', regNo: 'STU0001' },
-      { id: 2, name: 'Jane Smith', regNo: 'STU0002' },
-      { id: 3, name: 'Michael Johnson', regNo: 'STU0003' },
-      { id: 4, name: 'Emily Davis', regNo: 'STU0004' },
-      { id: 5, name: 'David Wilson', regNo: 'STU0005' }
-    ];
-
-    const tutors = [
-      { id: 1, name: 'Dr. Robert Smith', regNo: 'TUT0001' },
-      { id: 2, name: 'Prof. Mary Johnson', regNo: 'TUT0002' },
-      { id: 3, name: 'Dr. James Wilson', regNo: 'TUT0003' },
-      { id: 4, name: 'Prof. Patricia Brown', regNo: 'TUT0004' },
-      { id: 5, name: 'Dr. Michael Davis', regNo: 'TUT0005' }
-    ];
-
-    this.allPayments = Array.from({ length: 50 }, (_, i) => {
-      const isStudent = i % 2 === 0;
-      const person = isStudent 
-        ? students[i % students.length]
-        : tutors[i % tutors.length];
-      const date = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
-      const timestamp = Date.now() + i;
-      const random = Math.floor(Math.random() * 1000);
-      const refNumber = `REF${timestamp}${random}`.slice(0, 15);
-
-      return {
-        id: i + 1,
-        date: date.toISOString().split('T')[0],
-        referenceNumber: refNumber,
-        transactionType: 'in',
-        amount: Math.floor(Math.random() * 50000) + 1000,
-        ...(isStudent 
-          ? { studentId: person.id, studentName: person.name, studentRegNo: person.regNo }
-          : { tutorId: person.id, tutorName: person.name, tutorRegNo: person.regNo }
-        ),
-        remarks: i % 3 === 0 ? 'Payment received' : '',
-        createdAt: date.toISOString()
-      };
+  private loadData(): void {
+    this.isLoading = true;
+    this.paymentService.getAll().subscribe({
+      next: (data: Payment[]) => {
+        this.allPayments = data;
+        this.filteredPayments = [...this.allPayments];
+        this.isLoading = false;
+      },
+      error: (error: any) => {
+        this.isLoading = false;
+        // Error is handled by interceptor
+      }
     });
   }
+
 
   onSearch(): void {
     if (!this.searchQuery.trim()) {
@@ -199,9 +158,18 @@ export class PaymentTableComponent implements OnInit {
   }
 
   deletePayment(payment: Payment): void {
+    if (!payment.id) return;
+    
     if (confirm(`Are you sure you want to delete payment ${payment.referenceNumber}?`)) {
-      this.allPayments = this.allPayments.filter(p => p.id !== payment.id);
-      this.onSearch(); // Refresh filtered list
+      this.paymentService.delete(payment.id).subscribe({
+        next: (): void => {
+          this.toasterService.success('Payment deleted successfully', 'Success');
+          this.loadData(); // Reload data from API
+        },
+        error: (error: any): void => {
+          // Error is handled by interceptor
+        }
+      });
     }
   }
 

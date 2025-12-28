@@ -1,6 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 
 interface StatCard {
   title: string;
@@ -27,10 +25,8 @@ interface ChartData {
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  styleUrls: ['./dashboard.component.scss']
 })
 export class DashboardComponent implements OnInit {
   stats: StatCard[] = [];

@@ -1,22 +1,15 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToasterService } from '../../../../core/services/toaster.service';
+import { CourseService } from '../../../../core/services/course.service';
+import { BatchService, Batch } from '../../../../core/services/batch.service';
 import { CourseTableComponent } from './course-table/course-table.component';
-
-export interface Batch {
-  id: number;
-  batchName: string;
-  batchCode: string;
-}
 
 @Component({
   selector: 'app-course',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CourseTableComponent],
   templateUrl: './course.component.html',
-  styleUrl: './course.component.scss'
+  styleUrls: ['./course.component.scss']
 })
 export class CourseComponent implements OnInit {
   courseForm!: FormGroup;
@@ -30,7 +23,9 @@ export class CourseComponent implements OnInit {
     private fb: FormBuilder,
     private router: Router,
     private route: ActivatedRoute,
-    private toasterService: ToasterService
+    private toasterService: ToasterService,
+    private courseService: CourseService,
+    private batchService: BatchService
   ) {}
 
   ngOnInit(): void {
@@ -52,16 +47,19 @@ export class CourseComponent implements OnInit {
   }
 
   private loadBatches(): void {
-    // Load batches from batch collection
-    // For now, we'll generate fake batches
-    const batchNames = ['Batch 2024', 'Batch 2023', 'Batch 2025', 'Evening Batch', 'Morning Batch', 
-                        'Weekend Batch', 'Summer Batch', 'Winter Batch', 'Fast Track Batch', 'Regular Batch'];
-    
-    this.batches = Array.from({ length: 10 }, (_, i) => ({
-      id: i + 1,
-      batchName: batchNames[i % batchNames.length],
-      batchCode: `B${String(2020 + (i % 10)).slice(-2)}${String(i % 10 + 1).padStart(2, '0')}`
-    }));
+    this.batchService.getAll().subscribe({
+      next: (data) => {
+        this.batches = data.map(b => ({
+          id: b.id!,
+          batchName: b.batchName,
+          batchCode: b.batchCode,
+          remarks: b.remarks || ''
+        }));
+      },
+      error: (error) => {
+        // Error is handled by interceptor
+      }
+    });
   }
 
   private initializeForm(): void {
@@ -77,27 +75,55 @@ export class CourseComponent implements OnInit {
   }
 
   private loadExistingData(): void {
-    // Load existing course data if editing
-    // For now, we'll leave it empty
-    // In real app, this would come from API
     if (this.isEditMode && this.courseId) {
-      // Simulate loading data
-      // this.courseForm.patchValue({ ... });
+      this.courseService.getById(this.courseId).subscribe({
+        next: (course) => {
+          this.courseForm.patchValue(course);
+        },
+        error: (error) => {
+          // Error is handled by interceptor
+        }
+      });
     }
   }
 
   onSubmit(): void {
     if (this.courseForm.valid) {
       this.isSubmitting = true;
+      const formValue = this.courseForm.value;
       
-      // Simulate API call
-      setTimeout(() => {
-        this.isSubmitting = false;
-        const message = this.isEditMode ? 'Course updated successfully!' : 'Course created successfully!';
-        this.toasterService.success(message, 'Success');
-        // Navigate back to course table
-        this.router.navigate(['/dashboard/staff/course']);
-      }, 1000);
+      // Get batch name from selected batch
+      const selectedBatch = this.batches.find(b => b.id === formValue.batchId);
+      const payload = {
+        ...formValue,
+        batchName: selectedBatch?.batchName || ''
+      };
+      
+      if (this.isEditMode && this.courseId) {
+        this.courseService.update(this.courseId, payload).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.toasterService.success('Course updated successfully!', 'Success');
+            this.router.navigate(['/dashboard/staff/course']);
+          },
+          error: (error) => {
+            this.isSubmitting = false;
+            // Error is handled by interceptor
+          }
+        });
+      } else {
+        this.courseService.create(payload).subscribe({
+          next: () => {
+            this.isSubmitting = false;
+            this.toasterService.success('Course created successfully!', 'Success');
+            this.router.navigate(['/dashboard/staff/course']);
+          },
+          error: (error) => {
+            this.isSubmitting = false;
+            // Error is handled by interceptor
+          }
+        });
+      }
     } else {
       this.markFormGroupTouched();
       this.toasterService.error('Please fill all required fields correctly', 'Validation Error');

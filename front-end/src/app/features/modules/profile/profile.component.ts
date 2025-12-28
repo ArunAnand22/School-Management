@@ -1,14 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ToasterService } from '../../../core/services/toaster.service';
+import { PersonService } from '../../../core/services/person.service';
 
 @Component({
   selector: 'app-profile',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './profile.component.html',
-  styleUrl: './profile.component.scss'
+  styleUrls: ['./profile.component.scss']
 })
 export class ProfileComponent implements OnInit {
   profileForm!: FormGroup;
@@ -17,7 +15,8 @@ export class ProfileComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private toasterService: ToasterService
+    private toasterService: ToasterService,
+    private personService: PersonService
   ) {}
 
   ngOnInit(): void {
@@ -58,34 +57,40 @@ export class ProfileComponent implements OnInit {
   }
 
   private loadProfileData(): void {
-    // Load fake user data
-    const userData = {
-      regNo: 'EMP001',
-      date: new Date().toISOString().split('T')[0],
-      nameOfApplicant: 'John Doe',
-      nameOfCourse: 'Administration',
-      nameOfGuardian: 'Jane Doe',
-      relationshipWithGuardian: 'Spouse',
-      occupationOfGuardian: 'Teacher',
-      permanentAddress: '123 Main Street, City, State, 12345',
-      mobileNumber: '1234567890',
-      homeContact: '0987654321',
-      dateOfBirth: '1985-05-15',
-      sex: 'Male',
-      maritalStatus: 'Married',
-      religion: 'Christian',
-      religionCategory: 'Other',
-      educationalQualification: 'Masters in Education',
-      email: 'john.doe@school.com',
-      applicationNumber: 'APP001',
-      classTime: '09:00',
-      totalCourseFee: '0',
-      feeDetails: 'N/A - Staff Member',
-      admittedBy: 'HR Manager',
-      remarks: 'Experienced administrator with a passion for education and student success.',
-      profileImage: null
-    };
-    this.profileForm.patchValue(userData);
+    // TODO: Load from logged-in user's ID (get from auth service)
+    // For now, try to load from PersonService - get first tutor or student
+    // In production, this should use the logged-in user's person ID
+    const loggedInUserId = localStorage.getItem('userId') || localStorage.getItem('personId');
+    
+    if (loggedInUserId) {
+      // Try to load person by ID
+      this.personService.getById(+loggedInUserId).subscribe({
+        next: (person) => {
+          this.profileForm.patchValue(person);
+        },
+        error: (error) => {
+          // If not found, try to get first tutor
+          this.loadDefaultProfile();
+        }
+      });
+    } else {
+      // Load default profile (first tutor or empty form)
+      this.loadDefaultProfile();
+    }
+  }
+
+  private loadDefaultProfile(): void {
+    // Try to get first tutor as default
+    this.personService.getTutors().subscribe({
+      next: (tutors) => {
+        if (tutors && tutors.length > 0) {
+          this.profileForm.patchValue(tutors[0]);
+        }
+      },
+      error: (error) => {
+        // Error is handled by interceptor
+      }
+    });
   }
 
   onFileSelected(event: Event): void {
@@ -128,9 +133,24 @@ export class ProfileComponent implements OnInit {
 
   onSubmit(): void {
     if (this.profileForm.valid) {
-      console.log('Profile Updated:', this.profileForm.value);
-      this.toasterService.success('Profile updated successfully!', 'Success');
-      this.isEditing = false;
+      const formValue = this.profileForm.getRawValue();
+      const personId = formValue.id;
+      
+      if (personId) {
+        // Update existing person
+        this.personService.update(personId, formValue).subscribe({
+          next: () => {
+            this.toasterService.success('Profile updated successfully!', 'Success');
+            this.isEditing = false;
+          },
+          error: (error) => {
+            // Error is handled by interceptor
+          }
+        });
+      } else {
+        // Create new person (shouldn't happen in profile, but handle it)
+        this.toasterService.error('Person ID not found. Cannot update profile.', 'Error');
+      }
     } else {
       this.markFormGroupTouched(this.profileForm);
       this.toasterService.error('Please fill all required fields correctly.', 'Validation Error');
